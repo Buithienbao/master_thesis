@@ -1,6 +1,6 @@
 import numpy as np 
 import shapely
-from generate_data import generate_perfect_data
+from generate_data import generate_perfect_data,generate_outliers
 from scipy.optimize import least_squares
 
 def lineseg_dist(p, a, b):
@@ -18,7 +18,12 @@ def lineseg_dist(p, a, b):
 
 a_train,b_train,gt = generate_perfect_data()
 
-p0 = np.array([1,1,1]).astype(np.float32)
+outlier_a, outlier_b = generate_outliers()
+
+c_train = np.concatenate((a_train,outlier_a))
+# print(c_train.shape)
+
+p0 = np.array([50,50,50]).astype(np.float32)
 
 res_soft_l1 = least_squares(lineseg_dist, p0, loss='soft_l1', f_scale=0.1,
 
