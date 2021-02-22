@@ -25,16 +25,9 @@ def create_random_point(x0,y0,z0,distance):
     
     return [x0+x1, y0 +y, z0]
 
-def generate_perfect_data():
-
-    # Number of sample lines
-
-    N_lines = 100
-
+def generate_perfect_data(N_lines = 100):
 
     vect_rand = np.random.randint(100, size=(N_lines,3)).astype(np.float32)
-    # print(vect_rand)
-
 
     vect_trocar = np.tile(trocar_c,[100,1]).astype(np.float32)
     vect_end = vect_trocar + vect_rand
@@ -42,11 +35,9 @@ def generate_perfect_data():
 
     return vect_end, vect_start, trocar_c
 
-def generate_outliers():
+def generate_outliers(N_outliers = 20):
 
     # Generate outlier points
-
-    N_outliers = 20
 
     outliers = []
 
@@ -65,6 +56,9 @@ def generate_outliers():
     vect_outlier_end = vect_outlier_rand + outliers
 
     return vect_outlier_end, vect_outlier_start
+
+
+    
 # # Draw 3d graph
 
 # fig = plt.figure()
