@@ -29,7 +29,7 @@ def generate_perfect_data(N_lines = 100):
 
     vect_rand = np.random.randint(100, size=(N_lines,3)).astype(np.float32)
 
-    vect_trocar = np.tile(trocar_c,[100,1]).astype(np.float32)
+    vect_trocar = np.tile(trocar_c,[N_lines,1]).astype(np.float32)
     vect_end = vect_trocar + vect_rand
     vect_start = vect_trocar - vect_rand
 
@@ -48,7 +48,7 @@ def generate_outliers(N_outliers = 20):
 
 
     outliers = np.array(outliers).astype(np.float32)
-    # print(outliers)
+
     # Generate outlier lines
     vect_outlier_rand = np.random.randint(100, size=(N_outliers,3)).astype(np.float32)
 
@@ -57,8 +57,28 @@ def generate_outliers(N_outliers = 20):
 
     return vect_outlier_end, vect_outlier_start
 
+def add_gaussian_noise(data, mean=0, var=0.1, percentage = 0.2):
 
-    
+    num_data = len(data)
+
+    num_outlier = int(num_data*percentage)
+
+    sigma = np.sqrt(var)
+
+    gaussian = np.random.normal(mean,sigma,(num_outlier,3))
+
+    random_list = np.random.randint(0,num_data,size=num_outlier)
+
+    j = 0
+
+    for i in random_list:
+
+        data[i] = data[i] + gaussian[j]
+
+        j += 1
+
+    return data    
+
 # # Draw 3d graph
 
 # fig = plt.figure()
