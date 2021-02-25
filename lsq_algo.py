@@ -16,15 +16,16 @@ step = (end_range - start_range)/10
 
 def lineseg_dist(p, a, b):
 
-	dist = 0
-
+	dist = []
+	dist_val = 0
 	for i in range(len(a)):
 
 		x = a[i] - b[i]
 		t = np.dot(p-b[i], x)/np.dot(x, x)
-		dist += np.linalg.norm(t*(a[i]-b[i])+b[i]-p)
+		dist_val = np.linalg.norm(t*(a[i]-b[i])+b[i]-p)
+		dist.append(dist_val)
 	
-	return dist
+	return np.linalg.norm(dist)
 
 def relative_err_calc(pred,gt):
 
@@ -119,8 +120,8 @@ for num in list_noise_percentage:
 
 		for i in range(LOOP_NUM):
 
-			a_train_with_noise = add_gaussian_noise(a_train,mean=0,var=num,percentage=0.2)
-			# a_train_with_noise = add_gaussian_noise(a_train,mean=0,var=10,percentage=num/100)
+			# a_train_with_noise = add_gaussian_noise(a_train,mean=0,var=num,percentage=0.2)
+			a_train_with_noise = add_gaussian_noise(a_train,mean=0,var=20,percentage=num/100)
 
 			res_soft_l1 = least_squares(lineseg_dist, p0, loss='soft_l1', f_scale=0.1,
 
@@ -156,14 +157,14 @@ for num in list_noise_percentage:
 		list_eu_err_L1.append(eu_err_L1)
 		list_eu_err_L2.append(eu_err_L2)
 
-# print('list_rela_err_L1: ',list_rela_err_L1)
-# print('list_rela_err_L2: ',list_rela_err_L2)
+print('list_rela_err_L1: ',list_rela_err_L1)
+print('list_rela_err_L2: ',list_rela_err_L2)
 
-# print('list_abs_err_L1: ',list_abs_err_L1)
-# print('list_abs_err_L2: ',list_abs_err_L2)
+print('list_abs_err_L1: ',list_abs_err_L1)
+print('list_abs_err_L2: ',list_abs_err_L2)
 
-# print('list_eu_err_L1: ',list_eu_err_L1)
-# print('list_eu_err_L2: ',list_eu_err_L2)
+print('list_eu_err_L1: ',list_eu_err_L1)
+print('list_eu_err_L2: ',list_eu_err_L2)
 
 list_rela_err_L1 = np.array(list_rela_err_L1)
 list_rela_err_L2 = np.array(list_rela_err_L2)
@@ -177,30 +178,30 @@ axs[0,0].plot(list_noise_percentage, list_rela_err_L1[:,0], 'r-')
 axs[0,0].plot(list_noise_percentage, list_rela_err_L1[:,1], 'b-')
 axs[0,0].plot(list_noise_percentage, list_rela_err_L1[:,2], 'g-')
 axs[0,0].legend(['L1-norm -- Relative error for X','L1-norm -- Relative error for Y','L1-norm -- Relative error for Z'])
-axs[0,0].set(xlabel='Sigma Value', ylabel='Relative error (%)')
+axs[0,0].set(xlabel='Outliers (%)', ylabel='Relative error (%)')
 
 axs[0,1].plot(list_noise_percentage, list_rela_err_L2[:,0], 'r-')
 axs[0,1].plot(list_noise_percentage, list_rela_err_L2[:,1], 'b-')
 axs[0,1].plot(list_noise_percentage, list_rela_err_L2[:,2], 'g-')
 axs[0,1].legend(['L2-norm -- Relative error for X','L2-norm -- Relative error for Y','L2-norm -- Relative error for Z'])
-axs[0,1].set(xlabel='Sigma Value', ylabel='Relative error (%)')
+axs[0,1].set(xlabel='Outliers (%)', ylabel='Relative error (%)')
 
 axs[1,0].plot(list_noise_percentage, list_abs_err_L1[:,0], 'r-')
 axs[1,0].plot(list_noise_percentage, list_abs_err_L1[:,1], 'b-')
 axs[1,0].plot(list_noise_percentage, list_abs_err_L1[:,2], 'g-')
 axs[1,0].legend(['L1-norm -- Absolute error for X','L1-norm -- Absolute error for Y','L1-norm -- Absolute error for Z'])
-axs[1,0].set(xlabel='Sigma Value', ylabel='Absolute error')
+axs[1,0].set(xlabel='Outliers (%)', ylabel='Absolute error')
 
 axs[1,1].plot(list_noise_percentage, list_abs_err_L2[:,0], 'r-')
 axs[1,1].plot(list_noise_percentage, list_abs_err_L2[:,1], 'b-')
 axs[1,1].plot(list_noise_percentage, list_abs_err_L2[:,2], 'g-')
 axs[1,1].legend(['L2-norm -- Absolute error for X','L2-norm -- Absolute error for Y','L2-norm -- Absolute error for Z'])
-axs[1,1].set(xlabel='Sigma Value', ylabel='Absolute error')
+axs[1,1].set(xlabel='Outliers (%)', ylabel='Absolute error')
 
 
 axs[2,0].plot(list_noise_percentage, list_eu_err_L1, 'r--')
 axs[2,0].plot(list_noise_percentage, list_eu_err_L2, 'b-')
-axs[2,0].legend(['L1-norm -- Euclidean dist', 'L2-norm -- Euclidean dist'])
-axs[2,0].set(xlabel='Sigma Value', ylabel='Euclidean dist')
+axs[2,0].legend(['L1-norm -- RMSE', 'L2-norm -- RMSE'])
+axs[2,0].set(xlabel='Outliers (%)', ylabel='RMSE')
 
 plt.show()
