@@ -25,17 +25,33 @@ def create_random_point(x0,y0,z0,distance):
     
     return [x0+x1, y0 +y, z0]
 
-def generate_perfect_data(N_lines = 100):
+def generate_perfect_data(N_lines = 100, trocar = trocar_c):
 
     vect_rand = np.random.randint(100, size=(N_lines,3)).astype(np.float32)
 
-    vect_trocar = np.tile(trocar_c,[N_lines,1]).astype(np.float32)
+    vect_trocar = np.tile(trocar,[N_lines,1]).astype(np.float32)
     vect_end = vect_trocar + vect_rand
     vect_start = vect_trocar - vect_rand
 
     return vect_end, vect_start, trocar_c
 
-def generate_outliers(N_outliers = 20):
+def generate_outliers(N_outliers = 20, trocar = trocar_c):
+    """
+    generate outlier data
+
+    Parameters
+    ----------
+    N_outliers : int
+        number of outlier data, an integer value
+
+    trocar : numpy.ndarray
+        coordinate of trocar center(s), a 2 dimensions array of size (n,3)
+
+    Returns
+    -------
+    vector_outlier_start : 
+
+    """
 
     # Generate outlier points
 
@@ -43,14 +59,14 @@ def generate_outliers(N_outliers = 20):
 
     for i in range(N_outliers):
 
-      outlier = create_random_point(trocar_c[0], trocar_c[1], trocar_c[2], 15)
+      outlier = create_random_point(trocar[0], trocar[1], trocar[2], 15)
       outliers.append(outlier)
 
 
     outliers = np.array(outliers).astype(np.float32)
 
     # Generate outlier lines
-    vect_outlier_rand = np.random.randint(100, size=(N_outliers,3)).astype(np.float32)
+    vect_outlier_rand = np.random.randint(500, size=(N_outliers,3)).astype(np.float32)
 
     vect_outlier_start = outliers - vect_outlier_rand
     vect_outlier_end = vect_outlier_rand + outliers
@@ -103,4 +119,14 @@ def add_gaussian_noise(data, mean=0, var=0.1, percentage = 0.2):
 
 # plt.show()
 
+
+#############################################################################
+
+def generate_trocars(num = 1):
+
+    num_trocar = num
+
+    trocars = np.random.randint(300, size=(num_trocar,3)).astype(np.float32)
+
+    return trocars
 
