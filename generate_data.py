@@ -154,10 +154,10 @@ def random_unit_vector():
 def random_coef(num_coef = num_data, trocar = trocar_c):
 
     I = np.array([[1,0,0],[0,1,0],[0,0,1]])
-    a = np.zeros((num_data,3,3),dtype = np.float32)
-    b = np.zeros((num_data,3,1),dtype = np.float32)
+    a = np.zeros((num_coef,3,3),dtype = np.float32)
+    b = np.zeros((num_coef,3,1),dtype = np.float32)
 
-    for i in range(num_data):
+    for i in range(num_coef):
 
         unit_vect = random_unit_vector()
 

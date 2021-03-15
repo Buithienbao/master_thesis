@@ -2,6 +2,7 @@ import numpy as np
 import shapely
 from generate_data import generate_perfect_data,generate_outliers,add_gaussian_noise
 from scipy.optimize import least_squares
+from scipy.linalg import lstsq
 import matplotlib.pyplot as plt
 
 LOOP_NUM = 10
@@ -253,8 +254,8 @@ def run_algo1():
 
 	a,b = random_coef()
 	
-
-
+	x = linear_least_squares(a,b)
+	print(x)
 
 
 ###################################################################
@@ -263,4 +264,4 @@ def run_algo1():
 
 if __name__ == '__main__':
 	run_algo1()
-	random_unit_vector()
+	# random_unit_vector()
