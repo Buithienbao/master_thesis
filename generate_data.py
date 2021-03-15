@@ -9,6 +9,8 @@ from mpl_toolkits.mplot3d import Axes3D
 trocar_c = [30,68,102]
 trocar_c = np.array(trocar_c).astype(np.float32)
 
+num_data = 100
+
 def create_random_point(x0,y0,z0,distance):
     """
             Utility method for simulation of the points
@@ -25,7 +27,7 @@ def create_random_point(x0,y0,z0,distance):
     
     return [x0+x1, y0 +y, z0]
 
-def generate_perfect_data(N_lines = 100, trocar = trocar_c):
+def generate_perfect_data(N_lines = num_data, trocar = trocar_c):
 
     vect_rand = np.random.randint(100, size=(N_lines,3)).astype(np.float32)
 
@@ -33,7 +35,7 @@ def generate_perfect_data(N_lines = 100, trocar = trocar_c):
     vect_end = vect_trocar + vect_rand
     vect_start = vect_trocar - vect_rand
 
-    return vect_end, vect_start, trocar_c
+    return vect_end, vect_start, trocar_c, vect_rand
 
 def generate_outliers(N_outliers = 20, trocar = trocar_c):
     """
@@ -130,3 +132,40 @@ def generate_trocars(num = 1):
 
     return trocars
 
+def random_unit_vector():
+    """
+    Generates a random 3D unit vector (direction) with a uniform spherical distribution
+    Algo from http://stackoverflow.com/questions/5408276/python-uniform-spherical-distribution
+    :return:
+    """
+
+
+    phi = np.random.uniform(0,np.pi*2)
+    costheta = np.random.uniform(-1,1)
+
+    theta = np.arccos( costheta )
+    x = np.sin( theta) * np.cos( phi )
+    y = np.sin( theta) * np.sin( phi )
+    z = np.cos( theta )
+    vect = (x,y,z)
+    vect = np.asarray(vect, dtype=np.float32)
+    return vect
+
+def random_coef(num_coef = num_data, trocar = trocar_c):
+
+    I = np.array([[1,0,0],[0,1,0],[0,0,1]])
+    a = np.zeros((num_data,3,3),dtype = np.float32)
+    b = np.zeros((num_data,3,1),dtype = np.float32)
+
+    for i in range(num_data):
+
+        unit_vect = random_unit_vector()
+
+        point = float(trocar) + unit_vect
+
+        a[i] = I - np.dot(unit_vect.T, unit_vect)
+
+        b[i] = np.dot(a[i],point.T)
+
+
+    return a,b
