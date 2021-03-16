@@ -3,13 +3,17 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D
 
-
+from scipy.linalg.blas import dgemm
 # Trocar coordinates fixed values
 
 trocar_c = [30,68,102]
 trocar_c = np.array(trocar_c).astype(np.float32)
 
 num_data = 100
+
+def get_trocar_gt():
+    
+    return trocar_c
 
 def create_random_point(x0,y0,z0,distance):
     """
@@ -89,13 +93,15 @@ def add_gaussian_noise(data, mean=0, var=0.1, percentage = 0.2):
 
     j = 0
 
+    data_with_noise = data
+
     for i in random_list:
 
-        data[i] = data[i] + gaussian[j]
-
+        data_with_noise[i] = data_with_noise[i] + gaussian[j]
+  
         j += 1
-
-    return data    
+    
+    return data_with_noise    
 
 # # Draw 3d graph
 
@@ -151,21 +157,34 @@ def random_unit_vector():
     vect = np.asarray(vect, dtype=np.float32)
     return vect
 
-def random_coef(num_coef = num_data, trocar = trocar_c):
+def random_point_based_on_unit_vect(unit_vect,trocar):
+
+    N_vect = len(unit_vect)
+
+    vect_trocar = np.tile(trocar,[N_vect,1]).astype(np.float32)
+
+    point = vect_trocar + unit_vect
+    # point = point[np.newaxis,:]
+
+    return point
+
+def generate_coef(unit_vect, point):
 
     I = np.array([[1,0,0],[0,1,0],[0,0,1]])
-    a = np.zeros((num_coef,3,3),dtype = np.float32)
-    b = np.zeros((num_coef,3,1),dtype = np.float32)
+    num_vect = len(unit_vect)
 
-    for i in range(num_coef):
+    a = np.zeros((num_vect*3,3),dtype = np.float32)
+    b = np.zeros((num_vect*3,1),dtype = np.float32)
 
-        unit_vect = random_unit_vector()
+    for i in range(num_vect):
 
-        point = float(trocar) + unit_vect
+        temp_a = I - np.dot(unit_vect[i].T, unit_vect[i])
+        temp_b = np.dot(temp_a,point[i].T)
+        
+        for j in range(3):
 
-        a[i] = I - np.dot(unit_vect.T, unit_vect)
-
-        b[i] = np.dot(a[i],point.T)
-
+            a[3*i+j] = temp_a[j]
+            b[3*i+j] = temp_b[j]
 
     return a,b
+

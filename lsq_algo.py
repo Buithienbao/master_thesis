@@ -1,6 +1,6 @@
 import numpy as np 
 import shapely
-from generate_data import generate_perfect_data,generate_outliers,add_gaussian_noise
+from generate_data import *
 from scipy.optimize import least_squares
 from scipy.linalg import lstsq
 import matplotlib.pyplot as plt
@@ -53,11 +53,11 @@ def run_algo():
 
 	list_abs_err_L1 = []
 
+	list_eu_err_L1 = []
+
 	list_rela_err_L2 = []
 
 	list_abs_err_L2 = []
-
-	list_eu_err_L1 = []
 
 	list_eu_err_L2 = []
 
@@ -117,9 +117,6 @@ def run_algo():
 
 			# d_train = np.concatenate((b_train,outlier_b))
 
-
-
-
 			for i in range(LOOP_NUM):
 
 				# a_train_with_noise = add_gaussian_noise(a_train,mean=0,var=num,percentage=0.2)
@@ -159,14 +156,14 @@ def run_algo():
 			list_eu_err_L1.append(eu_err_L1)
 			list_eu_err_L2.append(eu_err_L2)
 
-	print('list_rela_err_L1: ',list_rela_err_L1)
-	print('list_rela_err_L2: ',list_rela_err_L2)
+	# print('list_rela_err_L1: ',list_rela_err_L1)
+	# print('list_rela_err_L2: ',list_rela_err_L2)
 
-	print('list_abs_err_L1: ',list_abs_err_L1)
-	print('list_abs_err_L2: ',list_abs_err_L2)
+	# print('list_abs_err_L1: ',list_abs_err_L1)
+	# print('list_abs_err_L2: ',list_abs_err_L2)
 
-	print('list_eu_err_L1: ',list_eu_err_L1)
-	print('list_eu_err_L2: ',list_eu_err_L2)
+	# print('list_eu_err_L1: ',list_eu_err_L1)
+	# print('list_eu_err_L2: ',list_eu_err_L2)
 
 	list_rela_err_L1 = np.array(list_rela_err_L1)
 	list_rela_err_L2 = np.array(list_rela_err_L2)
@@ -250,14 +247,108 @@ def linear_least_squares(a, b, residuals=False):
 
 def run_algo1():
 
-	# a_train,b_train,gt,vect = generate_perfect_data(N_lines = N_lines)
+	final_sol = 0
+		
+	unit_vect = []
 
-	a,b = random_coef()
+	for i in range(N_lines):
+
+		unit_vect_temp = random_unit_vector()
+		unit_vect.append(unit_vect_temp)
+
+	unit_vect = np.asarray(unit_vect)
+
+	gt = get_trocar_gt()
+
+	point = random_point_based_on_unit_vect(unit_vect, gt)
+
+	a,b = generate_coef(unit_vect,point)
 	
-	x = linear_least_squares(a,b)
-	print(x)
+	list_noise_percentage = np.arange(start_range, end_range + step,step,dtype=np.uint8)
+
+	list_rela_err = []
+
+	list_abs_err = []
+
+	list_eu_err = []
+
+	for num in list_noise_percentage:
+
+		if num == 0:
+
+			final_sol = 0
+				
+			for i in range(LOOP_NUM):
+
+				x = linear_least_squares(a,b)
+				final_sol += x
+			
+			final_sol = final_sol/LOOP_NUM
+
+			rela_err = relative_err_calc(final_sol,gt)
+
+			abs_err = abs_err_calc(final_sol,gt)
+
+			eu_err = eudist_err_calc(final_sol,gt)
+
+			list_rela_err.append(rela_err)
+
+			list_abs_err.append(abs_err)
+
+			list_eu_err.append(eu_err)
+
+		else:
+
+			final_sol = 0
+
+			point_with_noise = add_gaussian_noise(point,mean=0,var=20,percentage=num/100)
+
+			_,b_with_noise = generate_coef(unit_vect,point_with_noise)
+
+			for i in range(LOOP_NUM):
+
+				x = linear_least_squares(a,b_with_noise)
+				final_sol += x
+			
+			final_sol = final_sol/LOOP_NUM
+
+			rela_err = relative_err_calc(final_sol,gt)
+
+			abs_err = abs_err_calc(final_sol,gt)
+
+			eu_err = eudist_err_calc(final_sol,gt)
+
+			list_rela_err.append(rela_err)
+
+			list_abs_err.append(abs_err)
+
+			list_eu_err.append(eu_err)
 
 
+	list_rela_err = np.asarray(list_rela_err)
+
+	list_abs_err = np.asarray(list_abs_err)
+
+	#plot the result
+	fig, axs = plt.subplots(2, 2, figsize = (10, 4))
+
+	axs[0,0].plot(list_noise_percentage, list_rela_err[:,0], 'r-')
+	axs[0,0].plot(list_noise_percentage, list_rela_err[:,1], 'b-')
+	axs[0,0].plot(list_noise_percentage, list_rela_err[:,2], 'g-')
+	axs[0,0].legend(['Relative error for X','Relative error for Y','Relative error for Z'])
+	axs[0,0].set(xlabel='Outliers (%)', ylabel='Relative error (%)')
+
+	axs[1,0].plot(list_noise_percentage, list_abs_err[:,0], 'r-')
+	axs[1,0].plot(list_noise_percentage, list_abs_err[:,1], 'b-')
+	axs[1,0].plot(list_noise_percentage, list_abs_err[:,2], 'g-')
+	axs[1,0].legend(['Absolute error for X','Absolute error for Y','Absolute error for Z'])
+	axs[1,0].set(xlabel='Outliers (%)', ylabel='Absolute error')
+
+	axs[1,1].plot(list_noise_percentage, list_eu_err, 'r--')
+	axs[1,1].legend(['RMSE'])
+	axs[1,1].set(xlabel='Outliers (%)', ylabel='RMSE')
+
+	plt.show()
 ###################################################################
 
 
