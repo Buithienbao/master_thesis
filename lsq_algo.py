@@ -4,6 +4,7 @@ from generate_data import *
 from scipy.optimize import least_squares
 from scipy.linalg import lstsq
 import matplotlib.pyplot as plt
+import math
 
 LOOP_NUM = 10
 N_lines = 1000
@@ -349,10 +350,67 @@ def run_algo1():
 	axs[1,1].set(xlabel='Outliers (%)', ylabel='RMSE')
 
 	plt.show()
+
+def find_intersection_3d_lines(p1,p2,p3,p4):
+
+    """
+	Find intersection 3d lines
+
+    Parameters
+    ----------
+    p1,p2,p3,p4 : numpy.ndarray
+        coordinate of 3D points (p1 p2 lies on line 1, p3 p4 lies on line 2), an array of size (3,)
+
+    Returns
+    -------
+    p_intsec : numpy.ndarray
+    	coordinate of 3D intersection point, an array of size (3,)
+
+    """
+
+    coef1 = (np.dot(p1-p3,p4-p3)*np.dot(p4-p3,p2-p1) - np.dot(p1-p3,p2-p1)*np.dot(p4-p3,p4-p3))/(np.dot(p2-p1,p2-p1)*np.dot(p4-p3,p4-p3) - np.dot(p4-p3,p2-p1)*np.dot(p4-p3,p2-p1))
+    coef2 = (np.dot(p1-p3,p4-p3) + coef1*np.dot(p4-p3,p2-p1))/np.dot(p4-p3,p4-p3)
+
+    pt1 = p1 + coef1*(p2-p1)
+    pt2 = p3 + coef2*(p4-p3)
+
+    diff = np.linalg.norm(pt1 - pt2)
+    
+    if diff < 0.01:
+
+    	return pt1
+
+    else:
+
+    	return (pt1+pt2)/2
+
+
+def run_algo2(trocar):
+
+	# Generate lines to each trocar
+
+	for i in range(trocar_c.shape[0]):
+
+
+
+
+	# Define Ransac params
+	P_min = 0.99 
+	P_outlier = 0.2
+	sample_size = 2
+	N_trial = int(math.log(1-P_min)/math.log(1-(1-P_outlier)^sample_size))
+	
+
+	for i in range(N_trial):
+
+
 ###################################################################
 
 
 
 if __name__ == '__main__':
-	run_algo1()
+
+	trocar_c = np.array([[30,68,125],[150,70,130],[35, 200,120]])
+	percentage = np.array([0.5,0.2,0.2,0.1])
+	run_algo2(trocar_c,percentage)
 	# random_unit_vector()

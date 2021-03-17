@@ -132,9 +132,7 @@ def add_gaussian_noise(data, mean=0, var=0.1, percentage = 0.2):
 
 def generate_trocars(num = 1):
 
-    num_trocar = num
-
-    trocars = np.random.randint(300, size=(num_trocar,3)).astype(np.float32)
+    trocars = np.random.randint(300, size=(num,3)).astype(np.float32)
 
     return trocars
 
