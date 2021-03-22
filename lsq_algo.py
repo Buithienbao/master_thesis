@@ -5,6 +5,7 @@ from scipy.optimize import least_squares
 from scipy.linalg import lstsq
 import matplotlib.pyplot as plt
 import math
+from sklearn.utils import shuffle
 
 LOOP_NUM = 10
 N_lines = 1000
@@ -112,7 +113,7 @@ def run_algo():
 
 			#Outlier data result
 
-			# outlier_a, outlier_b = generate_outliers(N_outliers = num)
+			# outlier_a, outlier_b,_ = generate_outliers(N_outliers = num)
 
 			# c_train = np.concatenate((a_train,outlier_a))
 
@@ -385,25 +386,142 @@ def find_intersection_3d_lines(p1,p2,p3,p4):
     	return (pt1+pt2)/2
 
 
-def run_algo2(trocar):
+def run_algo2(trocar,percentage):
 
 	# Generate lines to each trocar
 
-	for i in range(trocar_c.shape[0]):
+	vect_end = np.empty((0,3),dtype=np.float32)	
+	vect_start = np.empty((0,3),dtype=np.float32)	
+	N_lines = 1000
 
+	num_trocar = trocar.shape[0]
 
+	for i in range(num_trocar):
 
+		end_temp, start_temp,_,_ = generate_perfect_data(int(N_lines*percentage[i]), trocar[i]) 
+		vect_end = np.append(vect_end,end_temp,axis=0)
+		vect_start = np.append(vect_start,start_temp,axis=0)
+
+	outlier_end, outlier_start,_ = generate_outliers(int(N_lines*percentage[-1]), trocar[0])
+	
+	vect_end =np.append(vect_end,outlier_end,axis=0)
+	vect_start= np.append(vect_start,outlier_start,axis=0)
+
+	
+	# print(vect_end.shape)
+	# print(vect_start.shape)
+	vect_end,vect_start = shuffle(vect_end,vect_start)
 
 	# Define Ransac params
 	P_min = 0.99 
-	P_outlier = 0.2
 	sample_size = 2
-	N_trial = int(math.log(1-P_min)/math.log(1-(1-P_outlier)^sample_size))
 	
+	vect_clustered = [[] for i in range(num_trocar)]
+	# vect_start_clustered = [[]]*num_trocar
 
-	for i in range(N_trial):
 
 
+	temp_per = 0
+	list_idx = np.random.choice(N_lines, size=N_lines, replace=False)		
+
+	for i in range(num_trocar):		
+
+		P_outlier = 1 - percentage[i]/(1-temp_per)
+
+		N_trial = int(math.log(1-P_min)/math.log(1-(1-P_outlier)**sample_size))
+		# print(N_trial)
+		count = 0
+		N_data = int(N_lines*percentage[i])
+		# print(N_data)
+		while(count < N_data):
+
+			temp_idx = []
+			list_error = []
+
+			for j in range(N_trial):
+
+				# line_temp1, line_temp2 = zip(*random.sample(list(zip(vect_end, vect_start)), 2))
+				idx1 = random.choice(list_idx)
+				list_idx = np.delete(list_idx,np.where(list_idx==idx1))
+				
+				idx2 = random.choice(list_idx)
+				list_idx = np.delete(list_idx,np.where(list_idx==idx2))
+
+				temp_idx.append(idx1)
+				temp_idx.append(idx2)
+
+				estim_pt = find_intersection_3d_lines(vect_end[idx1],vect_start[idx1],vect_end[idx2],vect_start[idx2])
+
+				error = np.linalg.norm(trocar[i]-estim_pt)
+
+				list_error.append(error)
+
+			idx_min = list_error.index(min(list_error))
+
+			line1_idx = temp_idx[idx_min*2]
+			line2_idx = temp_idx[idx_min*2+1]
+
+			temp_vect_clustered = vect_clustered[i]
+			temp_vect_clustered.append(line1_idx)
+			temp_vect_clustered.append(line2_idx)
+
+			temp_idx.pop(idx_min*2)
+			temp_idx.pop(idx_min*2)
+
+			list_idx = np.append(list_idx,np.asarray(temp_idx))
+			list_idx = shuffle(list_idx)
+			
+			count += 2
+
+
+		temp_per += percentage[i]
+
+	outlier_idx = list_idx
+
+	print(len(outlier_idx))
+	print(len(vect_clustered[0]))
+	print(len(vect_clustered[1]))
+	print(len(vect_clustered[2]))
+
+
+	for i in range(num_trocar):
+
+		vect_start_clustered = np.zeros((len(vect_clustered[i]),3),dtype=np.float32)
+		vect_end_clustered = np.zeros((len(vect_clustered[i]),3),dtype=np.float32)
+		
+		for j in range(len(vect_clustered[i])):
+
+			vect_start_clustered[j] = vect_start[vect_clustered[i][j]]
+			vect_end_clustered[j] = vect_end[vect_clustered[i][j]]
+
+		vect_rand_clustered = vect_end_clustered - vect_start_clustered
+
+		a,b = generate_coef(vect_rand_clustered, vect_start_clustered)
+		
+		final_sol = 0
+			
+		for k in range(LOOP_NUM):
+
+			x = linear_least_squares(a,b)
+			final_sol += x
+		
+		final_sol = final_sol/LOOP_NUM
+
+		rela_err = relative_err_calc(final_sol,trocar[i])
+
+		abs_err = abs_err_calc(final_sol,trocar[i])
+
+		eu_err = eudist_err_calc(final_sol,trocar[i])
+		print(trocar[i])
+		print(final_sol)
+		print(rela_err)
+		print(abs_err)
+		print(eu_err)
+		# list_rela_err.append(rela_err)
+
+		# list_abs_err.append(abs_err)
+
+		# list_eu_err.append(eu_err)
 ###################################################################
 
 

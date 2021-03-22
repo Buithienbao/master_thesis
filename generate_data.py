@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D
-
+import random
 from scipy.linalg.blas import dgemm
 # Trocar coordinates fixed values
 
@@ -33,7 +33,12 @@ def create_random_point(x0,y0,z0,distance):
 
 def generate_perfect_data(N_lines = num_data, trocar = trocar_c):
 
-    vect_rand = np.random.randint(100, size=(N_lines,3)).astype(np.float32)
+    # vect_rand = np.random.randint(100, size=(N_lines,3)).astype(np.float32)
+    vect_rand = np.zeros((N_lines,3),dtype=np.float32)
+    
+    for i in range(N_lines):
+
+        vect_rand[i] = random_unit_vector()
 
     vect_trocar = np.tile(trocar,[N_lines,1]).astype(np.float32)
     vect_end = vect_trocar + vect_rand
@@ -72,12 +77,17 @@ def generate_outliers(N_outliers = 20, trocar = trocar_c):
     outliers = np.array(outliers).astype(np.float32)
 
     # Generate outlier lines
-    vect_outlier_rand = np.random.randint(500, size=(N_outliers,3)).astype(np.float32)
+    # vect_outlier_rand = np.random.randint(500, size=(N_outliers,3)).astype(np.float32)
 
+    vect_outlier_rand = np.zeros((N_outliers,3),dtype=np.float32)
+
+    for i in range(N_outliers):
+        vect_outlier_rand[i] = random_unit_vector()
+    
     vect_outlier_start = outliers - vect_outlier_rand
     vect_outlier_end = vect_outlier_rand + outliers
 
-    return vect_outlier_end, vect_outlier_start
+    return vect_outlier_end, vect_outlier_start, vect_outlier_rand
 
 def add_gaussian_noise(data, mean=0, var=0.1, percentage = 0.2):
 
