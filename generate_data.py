@@ -178,6 +178,16 @@ def random_point_based_on_unit_vect(unit_vect,trocar):
 
 def generate_coef(unit_vect, point):
 
+    """
+    Parameters
+    unit_vect : np.ndarray of shape (n,3)
+    point : np.ndarray of shape (n,3)
+
+    Return
+    coefficient of ||aX-b||
+    a : np.ndarray of shape (n*3,3)
+    b : np.ndarray of shape (n*3,1)
+    """
     I = np.array([[1,0,0],[0,1,0],[0,0,1]])
     num_vect = len(unit_vect)
 

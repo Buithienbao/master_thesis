@@ -402,8 +402,9 @@ def run_algo2(trocar,percentage):
 		vect_end = np.append(vect_end,end_temp,axis=0)
 		vect_start = np.append(vect_start,start_temp,axis=0)
 
+	# vect_end_with_noise = add_gaussian_noise(vect_end, percentage=percentage[-1])
+
 	outlier_end, outlier_start,_ = generate_outliers(int(N_lines*percentage[-1]), trocar[0])
-	
 	vect_end =np.append(vect_end,outlier_end,axis=0)
 	vect_start= np.append(vect_start,outlier_start,axis=0)
 
@@ -470,19 +471,24 @@ def run_algo2(trocar,percentage):
 
 			list_idx = np.append(list_idx,np.asarray(temp_idx))
 			list_idx = shuffle(list_idx)
-			
+
 			count += 2
 
 
 		temp_per += percentage[i]
 
-	outlier_idx = list_idx
+	# outlier_idx = list_idx
 
-	print(len(outlier_idx))
-	print(len(vect_clustered[0]))
-	print(len(vect_clustered[1]))
-	print(len(vect_clustered[2]))
+	# print(len(outlier_idx))
+	# print(len(vect_clustered[0]))
+	# print(len(vect_clustered[1]))
+	# print(len(vect_clustered[2]))
 
+	list_rela_err = []
+
+	list_abs_err = []
+
+	list_eu_err = []
 
 	for i in range(num_trocar):
 
@@ -496,7 +502,7 @@ def run_algo2(trocar,percentage):
 
 		vect_rand_clustered = vect_end_clustered - vect_start_clustered
 
-		a,b = generate_coef(vect_rand_clustered, vect_start_clustered)
+		a,b = generate_coef(vect_rand_clustered, vect_end_clustered)
 		
 		final_sol = 0
 			
@@ -512,16 +518,16 @@ def run_algo2(trocar,percentage):
 		abs_err = abs_err_calc(final_sol,trocar[i])
 
 		eu_err = eudist_err_calc(final_sol,trocar[i])
-		print(trocar[i])
-		print(final_sol)
-		print(rela_err)
-		print(abs_err)
-		print(eu_err)
-		# list_rela_err.append(rela_err)
 
-		# list_abs_err.append(abs_err)
+		print("Trocar ground truth {}: {}".format(i,trocar[i]))
+		print("Estimated trocar: ",final_sol)
+		print("Relative error for X,Y,Z respectively (%): {} - {} - {}".format(rela_err[0],rela_err[1],rela_err[2]))
+		print("Absolute error for X,Y,Z respectively: {} - {} - {}".format(abs_err[0],abs_err[1],abs_err[2]))
+		print("Root mean square error: ",eu_err)
 
-		# list_eu_err.append(eu_err)
+
+
+
 ###################################################################
 
 
