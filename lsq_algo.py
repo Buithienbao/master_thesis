@@ -243,7 +243,8 @@ def linear_least_squares(a, b, residuals=False):
     x = np.linalg.solve(i, dgemm(alpha=1.0, a=a.T, b=b)).flatten()
 
     if residuals:
-        return x, np.linalg.norm(np.dot(a, x) - b)
+        # return x, np.linalg.norm(np.dot(a, x) - b)
+        return x, (np.dot(a, x) - b)**2
     else:
         return x
 
@@ -414,7 +415,7 @@ def run_algo2(trocar,percentage):
 	vect_end,vect_start = shuffle(vect_end,vect_start)
 
 	# Define Ransac params
-	P_min = 0.99 
+	P_min = 0.999999999 
 	sample_size = 2
 	
 	vect_clustered = [[] for i in range(num_trocar)]
@@ -430,7 +431,7 @@ def run_algo2(trocar,percentage):
 		P_outlier = 1 - percentage[i]/(1-temp_per)
 
 		N_trial = int(math.log(1-P_min)/math.log(1-(1-P_outlier)**sample_size))
-		# print(N_trial)
+		print(N_trial)
 		count = 0
 		N_data = int(N_lines*percentage[i])
 		# print(N_data)
@@ -505,13 +506,16 @@ def run_algo2(trocar,percentage):
 		a,b = generate_coef(vect_rand_clustered, vect_end_clustered)
 		
 		final_sol = 0
-			
+		residuals_err = 0
 		for k in range(LOOP_NUM):
 
-			x = linear_least_squares(a,b)
+			x,residuals = linear_least_squares(a,b,residuals=True)
 			final_sol += x
-		
+			residuals_err += residuals	
+
 		final_sol = final_sol/LOOP_NUM
+
+		residuals_err = residuals_err/LOOP_NUM
 
 		rela_err = relative_err_calc(final_sol,trocar[i])
 
@@ -519,12 +523,12 @@ def run_algo2(trocar,percentage):
 
 		eu_err = eudist_err_calc(final_sol,trocar[i])
 
+		
 		print("Trocar ground truth {}: {}".format(i,trocar[i]))
 		print("Estimated trocar: ",final_sol)
 		print("Relative error for X,Y,Z respectively (%): {} - {} - {}".format(rela_err[0],rela_err[1],rela_err[2]))
 		print("Absolute error for X,Y,Z respectively: {} - {} - {}".format(abs_err[0],abs_err[1],abs_err[2]))
 		print("Root mean square error: ",eu_err)
-
 
 
 
