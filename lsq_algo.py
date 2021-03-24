@@ -431,7 +431,6 @@ def run_algo2(trocar,percentage):
 		P_outlier = 1 - percentage[i]/(1-temp_per)
 
 		N_trial = int(math.log(1-P_min)/math.log(1-(1-P_outlier)**sample_size))
-		print(N_trial)
 		count = 0
 		N_data = int(N_lines*percentage[i])
 		# print(N_data)
@@ -515,21 +514,24 @@ def run_algo2(trocar,percentage):
 
 		final_sol = final_sol/LOOP_NUM
 
-		residuals_err = residuals_err/LOOP_NUM
-
 		rela_err = relative_err_calc(final_sol,trocar[i])
 
 		abs_err = abs_err_calc(final_sol,trocar[i])
 
 		eu_err = eudist_err_calc(final_sol,trocar[i])
 
+		residuals_err = residuals_err/LOOP_NUM
+		a_pinv = np.linalg.pinv(a.T)
+		var_mtrx = np.dot(residuals_err,a_pinv)/(a.shape[0]-3+1)
+		diagonal = np.diagonal(var_mtrx)
+		std_err = np.linalg.norm(diagonal)
 		
 		print("Trocar ground truth {}: {}".format(i,trocar[i]))
 		print("Estimated trocar: ",final_sol)
 		print("Relative error for X,Y,Z respectively (%): {} - {} - {}".format(rela_err[0],rela_err[1],rela_err[2]))
 		print("Absolute error for X,Y,Z respectively: {} - {} - {}".format(abs_err[0],abs_err[1],abs_err[2]))
 		print("Root mean square error: ",eu_err)
-
+		print("Standard error: ",std_err)
 
 
 ###################################################################
