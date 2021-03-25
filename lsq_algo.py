@@ -243,8 +243,7 @@ def linear_least_squares(a, b, residuals=False):
     x = np.linalg.solve(i, dgemm(alpha=1.0, a=a.T, b=b)).flatten()
 
     if residuals:
-        # return x, np.linalg.norm(np.dot(a, x) - b)
-        return x, (np.dot(a, x) - b)**2
+        return x, np.linalg.norm(np.dot(a, x) - b)
     else:
         return x
 
@@ -521,17 +520,25 @@ def run_algo2(trocar,percentage):
 		eu_err = eudist_err_calc(final_sol,trocar[i])
 
 		residuals_err = residuals_err/LOOP_NUM
-		a_pinv = np.linalg.pinv(a.T)
-		var_mtrx = np.dot(residuals_err,a_pinv)/(a.shape[0]-3+1)
-		diagonal = np.diagonal(var_mtrx)
-		std_err = np.linalg.norm(diagonal)
+
+		a_pinv = np.linalg.inv(np.dot(a.T,a))
+		var_mtrx_x = np.dot(residuals_err,a_pinv)/(a.shape[0]-3+1)
+		diagonal_x = np.diagonal(var_mtrx_x)
+		std_err_x = np.linalg.norm(diagonal_x)
 		
+		temp_mtrx = np.dot(var_mtrx_x,a.T)
+
+		var_mtrx_y = np.dot(a, temp_mtrx)
+		diagonal_y = np.diagonal(var_mtrx_y)
+		std_err_y = np.linalg.norm(diagonal_y)
+
 		print("Trocar ground truth {}: {}".format(i,trocar[i]))
 		print("Estimated trocar: ",final_sol)
 		print("Relative error for X,Y,Z respectively (%): {} - {} - {}".format(rela_err[0],rela_err[1],rela_err[2]))
 		print("Absolute error for X,Y,Z respectively: {} - {} - {}".format(abs_err[0],abs_err[1],abs_err[2]))
 		print("Root mean square error: ",eu_err)
-		print("Standard error: ",std_err)
+		print("Standard error x: ",std_err_x)
+		print("Standard error y: ",std_err_y)
 
 
 ###################################################################
