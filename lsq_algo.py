@@ -17,10 +17,12 @@ end_range = 50
 step = (end_range - start_range)/10
 
 
-def lineseg_dist(p, a, b):
+def lineseg_dist(p, a, b, index = 0):
 
 	dist = []
 	dist_val = 0
+	list_idx = []
+
 	for i in range(len(a)):
 
 		x = a[i] - b[i]
@@ -28,6 +30,18 @@ def lineseg_dist(p, a, b):
 		dist_val = np.linalg.norm(t*(a[i]-b[i])+b[i]-p)
 		dist.append(dist_val)
 	
+	if index:
+
+		# dist = dist.sort()
+		# dist = dist[0:index]
+		max_dist = max(dist)
+		for i in range(index):
+
+			temp_idx = dist.index(min(dist))
+			list_idx.append(temp_idx)
+			dist[temp_idx] = max_dist
+		return np.linalg.norm(dist), np.asarray(list_idx,dtype=np.float32)
+
 	return np.linalg.norm(dist)
 
 def relative_err_calc(pred,gt):
@@ -533,6 +547,139 @@ def run_algo2(trocar,percentage):
 		print("Root mean square error: ",eu_err)
 		print("Standard error: ",std_err)
 
+def run_algo3(trocar, percentage):
+
+	# Generate lines to each trocar
+
+	vect_end = np.empty((0,3),dtype=np.float32)	
+	vect_start = np.empty((0,3),dtype=np.float32)	
+	N_lines = 1000
+
+	num_trocar = trocar.shape[0]
+
+	for i in range(num_trocar):
+
+		end_temp, start_temp,_,_ = generate_perfect_data(int(N_lines*percentage[i]), trocar[i]) 
+		vect_end = np.append(vect_end,end_temp,axis=0)
+		vect_start = np.append(vect_start,start_temp,axis=0)
+
+	# vect_end_with_noise = add_gaussian_noise(vect_end, percentage=percentage[-1])
+
+	outlier_end, outlier_start,_ = generate_outliers(int(N_lines*percentage[-1]), trocar[0])
+	vect_end =np.append(vect_end,outlier_end,axis=0)
+	vect_start= np.append(vect_start,outlier_start,axis=0)
+
+	
+	# print(vect_end.shape)
+	# print(vect_start.shape)
+	vect_end,vect_start = shuffle(vect_end,vect_start)
+
+	# Define Ransac params
+	P_min = 0.99
+	sample_size = 2
+	
+	vect_clustered = [[] for i in range(num_trocar)]
+	# vect_start_clustered = [[]]*num_trocar
+
+
+
+	temp_per = 0
+	list_idx = np.random.choice(N_lines, size=N_lines, replace=False)		
+	remove_idx = []
+	for i in range(num_trocar):		
+
+		P_outlier = 1 - percentage[i]/(1-temp_per)
+
+		N_trial = int(math.log(1-P_min)/math.log(1-(1-P_outlier)**sample_size))
+		count = 0
+		N_data = int(N_lines*percentage[i])
+		# print(N_data)
+
+		# while(count < N_data):
+
+		dist = []
+		min_list_idx = np.zeros((N_trial,N_data),dtype=np.float32)
+
+		for j in range(N_trial):
+
+			# line_temp1, line_temp2 = zip(*random.sample(list(zip(vect_end, vect_start)), 2))
+			idx1 = random.choice(list_idx)
+			list_idx = np.delete(list_idx,np.where(list_idx==idx1))
+			
+			idx2 = random.choice(list_idx)
+			list_idx = np.delete(list_idx,np.where(list_idx==idx2))
+
+			estim_pt = find_intersection_3d_lines(vect_end[idx1],vect_start[idx1],vect_end[idx2],vect_start[idx2])
+
+			dist_temp, min_list_idx_temp = lineseg_dist(estim_pt,vect_start,vect_end,index = N_data)
+
+			min_list_idx[j] = min_list_idx_temp
+			
+			dist.append(dist_temp)
+
+
+		idx_min = dist.index(min(dist))
+		remove_idx.append(min_list_idx[idx_min])
+
+		vect_clustered[i] = min_list_idx[idx_min]
+
+		list_idx = np.arange(N_lines)
+		list_idx = np.delete(list_idx, np.asarray(remove_idx,dtype=np.uint8).flatten())
+		list_idx = shuffle(list_idx)
+
+	for i in range(num_trocar):
+
+		vect_start_clustered = np.zeros((len(vect_clustered[i]),3),dtype=np.float32)
+		vect_end_clustered = np.zeros((len(vect_clustered[i]),3),dtype=np.float32)
+		
+		for j in range(len(vect_clustered[i])):
+
+			vect_start_clustered[j] = vect_start[vect_clustered[i][j]]
+			vect_end_clustered[j] = vect_end[vect_clustered[i][j]]
+
+		vect_rand_clustered = vect_end_clustered - vect_start_clustered
+
+		a,b = generate_coef(vect_rand_clustered, vect_end_clustered)
+		
+		final_sol = 0
+		residuals_err = 0
+
+		for k in range(LOOP_NUM):
+
+			x,residuals = linear_least_squares(a,b,residuals=True)
+			final_sol += x
+			residuals_err += residuals	
+
+		final_sol = final_sol/LOOP_NUM
+
+		rela_err = relative_err_calc(final_sol,trocar[i])
+
+		abs_err = abs_err_calc(final_sol,trocar[i])
+
+		eu_err = eudist_err_calc(final_sol,trocar[i])
+
+		residuals_err = residuals_err/LOOP_NUM
+		a_pinv = np.linalg.pinv(a.T)
+		var_mtrx = np.dot(residuals_err,a_pinv)/(a.shape[0]-3+1)
+		diagonal = np.diagonal(var_mtrx)
+		std_err = np.linalg.norm(diagonal)
+		
+		print("Trocar ground truth {}: {}".format(i,trocar[i]))
+		print("Estimated trocar: ",final_sol)
+		print("Relative error for X,Y,Z respectively (%): {} - {} - {}".format(rela_err[0],rela_err[1],rela_err[2]))
+		print("Absolute error for X,Y,Z respectively: {} - {} - {}".format(abs_err[0],abs_err[1],abs_err[2]))
+		print("Root mean square error: ",eu_err)
+		print("Standard error: ",std_err)
+
+
+
+
+
+				# error = np.linalg.norm(trocar[i]-estim_pt)
+
+				# list_error.append(error)
+
+
 
 ###################################################################
 
@@ -542,5 +689,5 @@ if __name__ == '__main__':
 
 	trocar_c = np.array([[30,68,125],[150,70,130],[35, 200,120]])
 	percentage = np.array([0.5,0.2,0.2,0.1])
-	run_algo2(trocar_c,percentage)
+	run_algo3(trocar_c,percentage)
 	# random_unit_vector()
