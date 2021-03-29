@@ -40,7 +40,7 @@ def lineseg_dist(p, a, b, index = 0):
 			temp_idx = dist.index(min(dist))
 			list_idx.append(temp_idx)
 			dist[temp_idx] = max_dist
-		return np.linalg.norm(dist), np.asarray(list_idx,dtype=np.float32)
+		return np.linalg.norm(dist), np.asarray(list_idx,dtype=np.uint8)
 
 	return np.linalg.norm(dist)
 
@@ -582,7 +582,7 @@ def run_algo3(trocar, percentage):
 	vect_end,vect_start = shuffle(vect_end,vect_start)
 
 	# Define Ransac params
-	P_min = 0.99
+	P_min = 0.999999
 	sample_size = 2
 	
 	vect_clustered = [[] for i in range(num_trocar)]
@@ -605,7 +605,7 @@ def run_algo3(trocar, percentage):
 		# while(count < N_data):
 
 		dist = []
-		min_list_idx = np.zeros((N_trial,N_data),dtype=np.float32)
+		min_list_idx = np.zeros((N_trial,N_data),dtype=np.uint8)
 
 		for j in range(N_trial):
 
@@ -631,7 +631,8 @@ def run_algo3(trocar, percentage):
 		vect_clustered[i] = min_list_idx[idx_min]
 
 		list_idx = np.arange(N_lines)
-		list_idx = np.delete(list_idx, np.asarray(remove_idx,dtype=np.uint8).flatten())
+		flat_list = [item for sublist in remove_idx for item in sublist]
+		list_idx = np.delete(list_idx, np.asarray(flat_list))
 		list_idx = shuffle(list_idx)
 
 	for i in range(num_trocar):
