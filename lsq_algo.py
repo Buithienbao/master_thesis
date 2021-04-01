@@ -1,7 +1,7 @@
 import numpy as np 
 import shapely
 from generate_data import *
-from scipy.optimize import least_squares
+from scipy.optimize import least_squares,leastsq
 from scipy.linalg import lstsq
 import matplotlib.pyplot as plt
 import math
@@ -666,9 +666,11 @@ def run_algo3(trocar, percentage):
 
 		eu_err = eudist_err_calc(final_sol,trocar[i])
 
+
+		covar = np.matrix(np.dot(a.T, a)).I
 		residuals_err = residuals_err/LOOP_NUM
-		a_pinv = np.linalg.pinv(a.T)
-		var_mtrx = np.dot(residuals_err,a_pinv)/(a.shape[0]-3+1)
+		# a_pinv = np.linalg.pinv(a.T)
+		var_mtrx = np.dot(residuals_err,covar)/(a.shape[0]-3+1)
 		diagonal = np.diagonal(var_mtrx)
 		std_err = np.linalg.norm(diagonal)
 		
