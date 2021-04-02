@@ -91,6 +91,10 @@ def generate_outliers(N_outliers = 20, trocar = trocar_c):
 
 def add_gaussian_noise(data, mean=0, var=0.1, percentage = 0.2):
 
+    if var == 0:
+        
+        return data
+
     num_data = len(data)
 
     num_outlier = int(num_data*percentage)
