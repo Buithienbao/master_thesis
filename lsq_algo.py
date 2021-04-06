@@ -974,11 +974,23 @@ def run_algo4(trocar, percentage):
 
 			final_sol = final_sol/LOOP_NUM
 
-			rela_err = relative_err_calc(final_sol,trocar[i])
+			if i:
 
-			abs_err = abs_err_calc(final_sol,trocar[i])
+				dist_est_list = []
+				dist_est1 = np.linalg.norm(trocar[1]-final_sol)
+				dist_est2 = np.linalg.norm(trocar[2]-final_sol)
+				if dist_est1 < dist_est2:
+					trocar_processing_index = 1
+				else:
+					trocar_processing_index = 2
+			else: 
+				trocar_processing_index = i
+			
+			rela_err = relative_err_calc(final_sol,trocar[trocar_processing_index])
 
-			eu_err = eudist_err_calc(final_sol,trocar[i])
+			abs_err = abs_err_calc(final_sol,trocar[trocar_processing_index])
+
+			eu_err = eudist_err_calc(final_sol,trocar[trocar_processing_index])
 
 
 			covar = np.matrix(np.dot(a.T, a)).I
@@ -988,8 +1000,8 @@ def run_algo4(trocar, percentage):
 			diagonal = np.diagonal(var_mtrx)
 			std_err = np.linalg.norm(diagonal)
 			u,s,vh = np.linalg.svd(var_mtrx, full_matrices=True)
-			# print("Singular values: ",s)
-			print("Trocar ground truth (mm) {}: {}".format(i,trocar[i]))
+			print("Singular values: {} - {} - {}".format(s[0],s[1],s[2]))
+			print("Trocar ground truth (mm) {}: {}".format(trocar_processing_index,trocar[trocar_processing_index]))
 			print("Estimated trocar (mm): ",final_sol)
 			# print("Relative error for X,Y,Z respectively (%): {} - {} - {}".format(rela_err[0],rela_err[1],rela_err[2]))
 			# print("Absolute error for X,Y,Z respectively (mm): {} - {} - {}".format(abs_err[0],abs_err[1],abs_err[2]))
@@ -997,10 +1009,10 @@ def run_algo4(trocar, percentage):
 			# print("Covariance matrix associated to the estimated trocar: ",var_mtrx)
 			# print("Standard error (mm): ",std_err)
 
-			list_rela_err[ite,i,:] = rela_err
-			list_abs_err[ite,i,:] = abs_err
-			list_eu_err[ite,i] = eu_err
-			list_std_err[ite,i] = std_err
+			list_rela_err[ite,trocar_processing_index,:] = rela_err
+			list_abs_err[ite,trocar_processing_index,:] = abs_err
+			list_eu_err[ite,trocar_processing_index] = eu_err
+			list_std_err[ite,trocar_processing_index] = std_err
 
 		ite += 1
 
@@ -1189,9 +1201,9 @@ def run_algo5(trocar, percentage):
 
 		threshold = dist[idx_min]
 
-		# list_idx = np.append(list_idx,temp_idx)
-		
-		# list_idx = shuffle(list_idx)
+			# list_idx = np.append(list_idx,temp_idx)
+			
+			# list_idx = shuffle(list_idx)
 		###
 		# print(dist)
 		# print(idx_min)
@@ -1243,11 +1255,22 @@ def run_algo5(trocar, percentage):
 
 		final_sol = final_sol/LOOP_NUM
 
-		rela_err = relative_err_calc(final_sol,trocar[i])
+		if i:
 
-		abs_err = abs_err_calc(final_sol,trocar[i])
+			dist_est_list = []
+			dist_est1 = np.linalg.norm(trocar[1]-final_sol)
+			dist_est2 = np.linalg.norm(trocar[2]-final_sol)
+			if dist_est1 < dist_est2:
+				trocar_processing_index = 1
+			else:
+				trocar_processing_index = 2
+		else: 
+			trocar_processing_index = i
+		rela_err = relative_err_calc(final_sol,trocar[trocar_processing_index])
 
-		eu_err = eudist_err_calc(final_sol,trocar[i])
+		abs_err = abs_err_calc(final_sol,trocar[trocar_processing_index])
+
+		eu_err = eudist_err_calc(final_sol,trocar[trocar_processing_index])
 
 
 		covar = np.matrix(np.dot(a.T, a)).I
@@ -1257,9 +1280,11 @@ def run_algo5(trocar, percentage):
 		diagonal = np.diagonal(var_mtrx)
 		std_err = np.linalg.norm(diagonal)
 		u,s,vh = np.linalg.svd(var_mtrx, full_matrices=True)
-		# print("Singular values: ",s)
-		print("Trocar ground truth (mm) {}: {}".format(i,trocar[i]))
+		print("Singular values: {} - {} - {}".format(s[0],s[1],s[2]))
+
+		print("Trocar ground truth (mm) {}: {}".format(trocar_processing_index,trocar[trocar_processing_index]))
 		print("Estimated trocar (mm): ",final_sol)
+		DrawConfidenceRegion(s,vh)
 		# print("Relative error for X,Y,Z respectively (%): {} - {} - {}".format(rela_err[0],rela_err[1],rela_err[2]))
 		# print("Absolute error for X,Y,Z respectively (mm): {} - {} - {}".format(abs_err[0],abs_err[1],abs_err[2]))
 		# print("Root mean square error (mm): ",eu_err)
@@ -1273,6 +1298,32 @@ def run_algo5(trocar, percentage):
 
 	# 	ite += 1
 
+	# fig = plt.figure(figsize=plt.figaspect(1))  # Square figure
+	# ax = fig.add_subplot(111, projection='3d')
+
+	# coefs = (1, 2, 2)  # Coefficients in a0/c x**2 + a1/c y**2 + a2/c z**2 = 1 
+	# # Radii corresponding to the coefficients:
+	# rx, ry, rz = 1/np.sqrt(coefs)
+
+	# # Set of all spherical angles:
+	# u = np.linspace(0, 2 * np.pi, 100)
+	# v = np.linspace(0, np.pi, 100)
+
+	# # Cartesian coordinates that correspond to the spherical angles:
+	# # (this is the equation of an ellipsoid):
+	# x = rx * np.outer(np.cos(u), np.sin(v))
+	# y = ry * np.outer(np.sin(u), np.sin(v))
+	# z = rz * np.outer(np.ones_like(u), np.cos(v))
+
+	# # Plot:
+	# ax.plot_surface(x, y, z,  rstride=4, cstride=4, color='b')
+
+	# # Adjustment of the axes, so that they all have the same span:
+	# max_radius = max(rx, ry, rz)
+	# for axis in 'xyz':
+	#     getattr(ax, 'set_{}lim'.format(axis))((-max_radius, max_radius))
+
+	# plt.show()
 	# #plot the result
 	# plt.figure(100),
 	# fig, axs = plt.subplots(2, 2, figsize = (10, 4))
@@ -1364,6 +1415,26 @@ def EvaluateLsqSolution(covariance_mtrx, pts_estimated):
 	Evaluate the estimation result using linearized statistics
 	'''
 
+def DrawConfidenceRegion(s,rotation):
+
+	radii = np.sqrt(s)
+	print(rotation)
+	center = [0,0,0]
+	# now carry on with EOL's answer
+	u = np.linspace(0.0, 2.0 * np.pi, 100)
+	v = np.linspace(0.0, np.pi, 100)
+	x = radii[0] * np.outer(np.cos(u), np.sin(v))
+	y = radii[1] * np.outer(np.sin(u), np.sin(v))
+	z = radii[2] * np.outer(np.ones_like(u), np.cos(v))
+	for i in range(len(x)):
+	    for j in range(len(x)):
+	        [x[i,j],y[i,j],z[i,j]] = np.dot([x[i,j],y[i,j],z[i,j]], rotation) + center
+
+	# plot
+	fig = plt.figure()
+	ax = fig.add_subplot(111, projection='3d')
+	ax.plot_wireframe(x, y, z,  rstride=4, cstride=4, color='b', alpha=0.2)
+	plt.show()
 ###################################################################
 
 
@@ -1372,7 +1443,7 @@ if __name__ == '__main__':
 
 	trocar_c = np.array([[30,68,125],[150,70,130],[35, 140,120]])
 	# trocar_c = np.array([[30,68,125],[150,70,130],[35, 200,120]])
-	percentage = np.array([0.5,0.2,0.2,0.1])
+	percentage = np.array([0.4,0.3,0.2,0.1])
 	# run_algo3(trocar_c,percentage)
 	run_algo5(trocar_c,percentage)
 	# scene = pywavefront.Wavefront('liver_simplified.obj')
