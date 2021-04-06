@@ -9,10 +9,10 @@ from skimage import measure
 import math
 from sklearn.utils import shuffle
 from skimage.draw import ellipsoid
-import pywavefront
-from pywavefront import visualization
-import ratcave as rc
-import pyglet
+# import pywavefront
+# from pywavefront import visualization
+# import ratcave as rc
+# import pyglet
 
 LOOP_NUM = 10
 N_lines = 1000
@@ -870,11 +870,11 @@ def run_algo4(trocar, percentage):
 
 
 		temp_per = 0
-		list_idx = np.random.choice(N_lines, size=N_lines, replace=False)		
+		list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
 		remove_idx = []
 		for i in range(num_trocar):		
 
-			list_idx_copy = np.copy(list_idx)
+			list_idx_copy = list_idx.copy()
 
 			P_outlier = 1 - percentage[i]/(1-temp_per)
 
@@ -927,17 +927,27 @@ def run_algo4(trocar, percentage):
 			remove_idx.append(min_list_idx[idx_min])
 
 			vect_clustered[i] = np.copy(min_list_idx[idx_min])
-			# print(len(np.unique(vect_clustered[i])))
+			# print(np.sort(np.unique(vect_clustered[i])))
+			print(len(np.unique(vect_clustered[i])))
 			list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
 			flat_list = [item for sublist in remove_idx for item in sublist]
-			list_idx = np.delete(list_idx, np.asarray(flat_list))
-			list_idx = shuffle(list_idx)
+			flat_list = np.array(flat_list)
+			# print(sorted(np.unique(flat_list)))
+			print(len(np.unique(flat_list)))
+			list_idx = list_idx[~np.isin(list_idx,flat_list)]
+			# list_idx = shuffle(list_idx)
 			temp_per += percentage[i]
+			# print(sorted(np.unique(list_idx)))
+			print(len(np.unique(list_idx)))
+			# print(np.sort(list_idx))
 			# print(list_idx)
 			# print(len(list_idx))
 			# print(len(flat_list))
 			# print(len(np.unique(min_list_idx[idx_min])))
 			# print(list_idx)
+		# for i in range(num_trocar):
+		# 	print(vect_clustered[i])
+
 		for i in range(num_trocar):
 
 			vect_start_clustered = np.zeros((len(vect_clustered[i]),3),dtype=np.float32)
@@ -979,13 +989,13 @@ def run_algo4(trocar, percentage):
 			std_err = np.linalg.norm(diagonal)
 			u,s,vh = np.linalg.svd(var_mtrx, full_matrices=True)
 			# print("Singular values: ",s)
-			print("Trocar ground truth {}: {}".format(i,trocar[i]))
-			print("Estimated trocar: ",final_sol)
-			print("Relative error for X,Y,Z respectively (%): {} - {} - {}".format(rela_err[0],rela_err[1],rela_err[2]))
-			print("Absolute error for X,Y,Z respectively: {} - {} - {}".format(abs_err[0],abs_err[1],abs_err[2]))
-			print("Root mean square error: ",eu_err)
-			print("Covariance matrix associated to the estimated trocar: ",var_mtrx)
-			print("Standard error: ",std_err)
+			print("Trocar ground truth (mm) {}: {}".format(i,trocar[i]))
+			print("Estimated trocar (mm): ",final_sol)
+			# print("Relative error for X,Y,Z respectively (%): {} - {} - {}".format(rela_err[0],rela_err[1],rela_err[2]))
+			# print("Absolute error for X,Y,Z respectively (mm): {} - {} - {}".format(abs_err[0],abs_err[1],abs_err[2]))
+			# print("Root mean square error (mm): ",eu_err)
+			# print("Covariance matrix associated to the estimated trocar: ",var_mtrx)
+			# print("Standard error (mm): ",std_err)
 
 			list_rela_err[ite,i,:] = rela_err
 			list_abs_err[ite,i,:] = abs_err
@@ -1079,6 +1089,281 @@ def run_algo4(trocar, percentage):
 	# axs[2,3].set_title('Trocar 3')
 
 	plt.show()
+
+def run_algo5(trocar, percentage):
+
+	# Generate lines to each trocar
+
+	vect_end = np.empty((0,3),dtype=np.float32)	
+	vect_start = np.empty((0,3),dtype=np.float32)	
+	N_lines = 1000
+	list_noise_percentage = np.arange(start_range, end_range + step,step,dtype=np.uint8)
+
+	num_trocar = trocar.shape[0]
+
+	for i in range(num_trocar):
+
+		end_temp, start_temp,_,_ = generate_perfect_data(int(N_lines*percentage[i]), trocar[i]) 
+		vect_end = np.append(vect_end,end_temp,axis=0)
+		vect_start = np.append(vect_start,start_temp,axis=0)
+
+	# vect_end_with_noise = add_gaussian_noise(vect_end, percentage=percentage[-1])
+
+	outlier_end, outlier_start,_ = generate_outliers(int(N_lines*percentage[-1]), trocar[0])
+	
+	list_rela_err = np.zeros((list_noise_percentage.shape[0],num_trocar,3),dtype=np.float32)
+	list_abs_err = np.zeros((list_noise_percentage.shape[0],num_trocar,3),dtype=np.float32)
+	list_eu_err = np.zeros((list_noise_percentage.shape[0],num_trocar,1),dtype=np.float32)
+	list_std_err = np.zeros((list_noise_percentage.shape[0],num_trocar,1),dtype=np.float32)
+
+	ite = 0
+	
+	# for num in list_noise_percentage:
+
+
+
+	# outlier_end_noise = add_gaussian_noise(outlier_end,var=num,percentage=1)
+
+	vect_end =np.append(vect_end,outlier_end,axis=0)
+	vect_start= np.append(vect_start,outlier_start,axis=0)
+
+	
+	# print(vect_end.shape)
+	# print(vect_start.shape)
+	# vect_end,vect_start = shuffle(vect_end,vect_start)
+
+	# Define Ransac params
+	P_min = 0.999999
+	sample_size = 2
+	
+	vect_clustered = [[] for i in range(num_trocar)]
+	# vect_start_clustered = [[]]*num_trocar
+
+
+
+	temp_per = 0
+	list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
+	remove_idx = []
+	for i in range(num_trocar):		
+
+		list_idx_copy = list_idx.copy()
+
+		P_outlier = 1 - percentage[i]/(1-temp_per)
+
+		N_trial = int(math.log(1-P_min)/math.log(1-(1-P_outlier)**sample_size))
+		count = 0
+		N_data = int(N_lines*percentage[i])
+		# print(N_data)
+
+		# while(count < N_data):
+
+		min_list_idx = np.array([], dtype=np.uint8).reshape(0,N_data)
+		threshold = 10
+		temp_idx = np.zeros(N_trial,dtype=np.uint8)
+		###
+		# while (threshold > 0.01):
+		
+		dist = []
+		# print(N_trial)
+		for j in range(N_trial):
+
+			idx1 = random.choice(list_idx)
+			list_idx = np.delete(list_idx,np.where(list_idx==idx1))
+			
+			idx2 = random.choice(list_idx)
+			list_idx = np.delete(list_idx,np.where(list_idx==idx2))
+
+			temp_idx = np.append(temp_idx,idx1)
+			temp_idx = np.append(temp_idx,idx2)
+
+			estim_pt = find_intersection_3d_lines(vect_end[idx1],vect_start[idx1],vect_end[idx2],vect_start[idx2])
+
+			dist_temp, min_list_idx_temp = lineseg_dist(estim_pt,vect_start,vect_end,index = N_data, list_idx_lines = list_idx_copy)
+
+			# print(len(np.unique(min_list_idx_temp)))
+			min_list_idx = np.vstack([min_list_idx,min_list_idx_temp])
+			
+			dist.append(dist_temp)
+
+		idx_min = dist.index(min(dist))
+
+		threshold = dist[idx_min]
+
+		# list_idx = np.append(list_idx,temp_idx)
+		
+		# list_idx = shuffle(list_idx)
+		###
+		# print(dist)
+		# print(idx_min)
+		# print(min_list_idx)
+		remove_idx.append(min_list_idx[idx_min])
+
+		vect_clustered[i] = np.copy(min_list_idx[idx_min])
+		# print(np.sort(np.unique(vect_clustered[i])))
+		list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
+		flat_list = [item for sublist in remove_idx for item in sublist]
+		flat_list = np.array(flat_list)
+		# print(sorted(np.unique(flat_list)))
+		list_idx = list_idx[~np.isin(list_idx,flat_list)]
+		list_idx = shuffle(list_idx)
+		temp_per += percentage[i]
+		# print(sorted(np.unique(list_idx)))
+		# print(np.sort(list_idx))
+		# print(list_idx)
+		# print(len(list_idx))
+		# print(len(flat_list))
+		# print(len(np.unique(min_list_idx[idx_min])))
+		# print(list_idx)
+	# for i in range(num_trocar):
+	# 	print(vect_clustered[i])
+
+	for i in range(num_trocar):
+
+		vect_start_clustered = np.zeros((len(vect_clustered[i]),3),dtype=np.float32)
+		vect_end_clustered = np.zeros((len(vect_clustered[i]),3),dtype=np.float32)
+		
+		for j in range(len(vect_clustered[i])):
+
+			vect_start_clustered[j] = vect_start[vect_clustered[i][j]]
+			vect_end_clustered[j] = vect_end[vect_clustered[i][j]]
+
+		vect_rand_clustered = vect_end_clustered - vect_start_clustered
+
+		a,b = generate_coef(vect_rand_clustered, vect_end_clustered)
+
+		final_sol = 0
+		residuals_err = 0
+
+		for k in range(LOOP_NUM):
+
+			x,residuals = linear_least_squares(a,b,residuals=True)
+			# x,residuals = np.linalg.lstsq(a,b,rcond=None)
+			final_sol += x
+			residuals_err += residuals	
+
+		final_sol = final_sol/LOOP_NUM
+
+		rela_err = relative_err_calc(final_sol,trocar[i])
+
+		abs_err = abs_err_calc(final_sol,trocar[i])
+
+		eu_err = eudist_err_calc(final_sol,trocar[i])
+
+
+		covar = np.matrix(np.dot(a.T, a)).I
+		residuals_err = residuals_err/LOOP_NUM
+		# a_pinv = np.linalg.pinv(a.T)
+		var_mtrx = np.dot(residuals_err,covar)/(a.shape[0]-3+1)
+		diagonal = np.diagonal(var_mtrx)
+		std_err = np.linalg.norm(diagonal)
+		u,s,vh = np.linalg.svd(var_mtrx, full_matrices=True)
+		# print("Singular values: ",s)
+		print("Trocar ground truth (mm) {}: {}".format(i,trocar[i]))
+		print("Estimated trocar (mm): ",final_sol)
+		# print("Relative error for X,Y,Z respectively (%): {} - {} - {}".format(rela_err[0],rela_err[1],rela_err[2]))
+		# print("Absolute error for X,Y,Z respectively (mm): {} - {} - {}".format(abs_err[0],abs_err[1],abs_err[2]))
+		# print("Root mean square error (mm): ",eu_err)
+		# print("Covariance matrix associated to the estimated trocar: ",var_mtrx)
+		# print("Standard error (mm): ",std_err)
+
+			# list_rela_err[ite,i,:] = rela_err
+			# list_abs_err[ite,i,:] = abs_err
+			# list_eu_err[ite,i] = eu_err
+			# list_std_err[ite,i] = std_err
+
+	# 	ite += 1
+
+	# #plot the result
+	# plt.figure(100),
+	# fig, axs = plt.subplots(2, 2, figsize = (10, 4))
+	# fig.suptitle('Trocar 1')
+	# axs[0,0].plot(list_noise_percentage, list_rela_err[:,0,0], 'r-')
+	# axs[0,0].plot(list_noise_percentage, list_rela_err[:,0,1], 'b-')
+	# axs[0,0].plot(list_noise_percentage, list_rela_err[:,0,2], 'g-')
+	# axs[0,0].legend(['Relative error for X','Relative error for Y','Relative error for Z'])
+	# axs[0,0].set(xlabel='Noise variance', ylabel='Relative error (%)')
+	# # axs[0,0].set_title('Trocar 1')
+	
+	# axs[0,1].plot(list_noise_percentage, list_abs_err[:,0,0], 'r-')
+	# axs[0,1].plot(list_noise_percentage, list_abs_err[:,0,1], 'b-')
+	# axs[0,1].plot(list_noise_percentage, list_abs_err[:,0,2], 'g-')
+	# axs[0,1].legend(['Absolute error for X','Absolute error for Y','Absolute error for Z'])
+	# axs[0,1].set(xlabel='Noise variance', ylabel='Absolute error (mm)')
+	# # axs[0,1].set_title('Trocar 1')
+
+	# axs[1,0].plot(list_noise_percentage, list_eu_err[:,0], 'r--')
+	# axs[1,0].legend(['RMSE'])
+	# axs[1,0].set(xlabel='Noise variance', ylabel='RMSE (mm)')
+	# # axs[0,2].set_title('Trocar 1')
+	
+	# axs[1,1].plot(list_noise_percentage, list_std_err[:,0], 'r--')
+	# axs[1,1].legend(['Standard error'])
+	# axs[1,1].set(xlabel='Noise variance', ylabel='Standard error (mm)')
+	# # axs[0,3].set_title('Trocar 1')
+	
+	# plt.figure(200),
+	# fig, axs = plt.subplots(2, 2, figsize = (10, 4))
+	# fig.suptitle('Trocar 2')
+
+	# axs[0,0].plot(list_noise_percentage, list_rela_err[:,1,0], 'r-')
+	# axs[0,0].plot(list_noise_percentage, list_rela_err[:,1,1], 'b-')
+	# axs[0,0].plot(list_noise_percentage, list_rela_err[:,1,2], 'g-')
+	# axs[0,0].legend(['Relative error for X','Relative error for Y','Relative error for Z'])
+	# axs[0,0].set(xlabel='Noise variance', ylabel='Relative error (%)')
+	# # axs[1,0].set_title('Trocar 2')
+
+	# axs[0,1].plot(list_noise_percentage, list_abs_err[:,1,0], 'r-')
+	# axs[0,1].plot(list_noise_percentage, list_abs_err[:,1,1], 'b-')
+	# axs[0,1].plot(list_noise_percentage, list_abs_err[:,1,2], 'g-')
+	# axs[0,1].legend(['Absolute error for X','Absolute error for Y','Absolute error for Z'])
+	# axs[0,1].set(xlabel='Noise variance', ylabel='Absolute error (mm)')
+	# # axs[1,1].set_title('Trocar 2')
+
+	# axs[1,0].plot(list_noise_percentage, list_eu_err[:,1], 'r--')
+	# axs[1,0].legend(['RMSE'])
+	# axs[1,0].set(xlabel='Noise variance', ylabel='RMSE (mm)')
+	# # axs[1,2].set_title('Trocar 2')
+
+	# axs[1,1].plot(list_noise_percentage, list_std_err[:,1], 'r--')
+	# axs[1,1].legend(['Standard error'])
+	# axs[1,1].set(xlabel='Noise variance', ylabel='Standard error (mm)')
+	# # axs[1,3].set_title('Trocar 2')
+	
+	# plt.figure(300),
+	# fig, axs = plt.subplots(2, 2, figsize = (10, 4))
+	# fig.suptitle('Trocar 3')
+
+	# axs[0,0].plot(list_noise_percentage, list_rela_err[:,2,0], 'r-')
+	# axs[0,0].plot(list_noise_percentage, list_rela_err[:,2,1], 'b-')
+	# axs[0,0].plot(list_noise_percentage, list_rela_err[:,2,2], 'g-')
+	# axs[0,0].legend(['Relative error for X','Relative error for Y','Relative error for Z'])
+	# axs[0,0].set(xlabel='Noise variance', ylabel='Relative error (%)')
+	# # axs[2,0].set_title('Trocar 3')
+
+	# axs[0,1].plot(list_noise_percentage, list_abs_err[:,2,0], 'r-')
+	# axs[0,1].plot(list_noise_percentage, list_abs_err[:,2,1], 'b-')
+	# axs[0,1].plot(list_noise_percentage, list_abs_err[:,2,2], 'g-')
+	# axs[0,1].legend(['Absolute error for X','Absolute error for Y','Absolute error for Z'])
+	# axs[0,1].set(xlabel='Noise variance', ylabel='Absolute error (mm)')
+	# # axs[2,1].set_title('Trocar 3')
+
+	# axs[1,0].plot(list_noise_percentage, list_eu_err[:,2], 'r--')
+	# axs[1,0].legend(['RMSE'])
+	# axs[1,0].set(xlabel='Noise variance', ylabel='RMSE (mm)')	
+	# # axs[2,2].set_title('Trocar 3')
+
+	# axs[1,1].plot(list_noise_percentage, list_std_err[:,2], 'r--')
+	# axs[1,1].legend(['Standard error'])
+	# axs[1,1].set(xlabel='Noise variance', ylabel='Standard error (mm)')
+	# # axs[2,3].set_title('Trocar 3')
+
+	# plt.show()	
+
+def EvaluateLsqSolution(covariance_mtrx, pts_estimated):
+	'''
+	Evaluate the estimation result using linearized statistics
+	'''
+
 ###################################################################
 
 
@@ -1089,7 +1374,7 @@ if __name__ == '__main__':
 	# trocar_c = np.array([[30,68,125],[150,70,130],[35, 200,120]])
 	percentage = np.array([0.5,0.2,0.2,0.1])
 	# run_algo3(trocar_c,percentage)
-	run_algo4(trocar_c,percentage)
+	run_algo5(trocar_c,percentage)
 	# scene = pywavefront.Wavefront('liver_simplified.obj')
 	# obj_reader = rc.WavefrontReader('liver_simplified.obj')
 	
