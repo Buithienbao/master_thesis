@@ -1840,7 +1840,8 @@ if __name__ == '__main__':
 	ax.set_xlabel('X (mm)')
 	ax.set_ylabel('Y (mm)')
 	ax.set_zlabel('Z (mm)')
-	# draw outliers point
+	# draw cloud points
+	# draw cloud points
 	for i in range(vertex_data.size):
 		ax.scatter(pts[i,0],pts[i,1],pts[i,2],marker = ",",color="#948e8e")
 
@@ -1859,6 +1860,7 @@ if __name__ == '__main__':
 
 
 	#draw trocar point
-	ax.scatter(trocar_c[0], trocar_c[1], trocar_c[2], trocar_c[3], marker = "*")
+	for i in range(trocar_c.shape[0]):
+		ax.scatter(trocar_c[i,0],trocar_c[i,1],trocar_c[i,2],marker = "*",color="b")
 
 	plt.show()
