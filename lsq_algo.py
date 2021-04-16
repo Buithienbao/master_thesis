@@ -9,11 +9,10 @@ from skimage import measure
 import math
 from sklearn.utils import shuffle
 from skimage.draw import ellipsoid
-# import pywavefront
-# from pywavefront import visualization
-# import ratcave as rc
-# import pyglet
 
+from pyntcloud import PyntCloud
+from plyfile import PlyData
+from itertools import product, combinations
 LOOP_NUM = 10
 N_lines = 1000
 # percentage = 0.2
@@ -1814,7 +1813,7 @@ def DrawConfidenceRegion(s,center,rotation):
 
 if __name__ == '__main__':
 
-	trocar_c = np.array([[30,68,125],[150,70,130],[35, 140,120]])
+	trocar_c = np.array([[-60,70,120],[-65,-70,120],[65,-75,120],[60,75,120]])
 	# trocar_c = np.array([[30,68,125],[150,70,130],[35, 200,120]])
 	# percentage = np.array([0.5,0.3,0.2,0.1])
 	# run_algo6(trocar_c,percentage)
@@ -1823,7 +1822,43 @@ if __name__ == '__main__':
 	# run_algo4(trocar_c,percentage)
 
 	percentage = np.array([0.4,0.3,0.2,0.1])
-	run_algo5(trocar_c,percentage)
-	# scene = pywavefront.Wavefront('liver_simplified.obj')
-	# obj_reader = rc.WavefrontReader('liver_simplified.obj')
-	
+	# run_algo5(trocar_c,percentage)
+	# Read the point cloud
+	# obj_reader = PyntCloud.from_file("liver_simplified.ply")
+	# print(obj_reader.points.describe())
+	plydata = PlyData.read("liver_simplified.ply")
+	vertex_data = plydata['vertex'].data # numpy array with fields ['x', 'y', 'z']
+	pts = np.zeros([vertex_data.size, 3])
+	pts[:, 0] = vertex_data['x']
+	pts[:, 1] = vertex_data['y']
+	pts[:, 2] = vertex_data['z']
+
+	# Draw 3d graph
+
+	fig = plt.figure()
+	ax = fig.add_subplot(111, projection='3d')
+	ax.set_xlabel('X (mm)')
+	ax.set_ylabel('Y (mm)')
+	ax.set_zlabel('Z (mm)')
+	# draw outliers point
+	for i in range(vertex_data.size):
+		ax.scatter(pts[i,0],pts[i,1],pts[i,2],marker = ",",color="#948e8e")
+
+	r = [-120, 120]
+	for s, e in combinations(np.array(list(product(r, r, r))), 2):
+		if np.sum(np.abs(s-e)) == r[1]-r[0]:
+			ax.plot3D(*zip(s, e), color="#0c0c0d")
+	# #draw outlier lines
+	# for i in range(vertex_data.size):
+	#     ax.plot([vect_outlier_start[i][0], vect_outlier_end[i][0]], [vect_outlier_start[i][1],vect_outlier_end[i][1]],zs=[vect_outlier_start[i][2],vect_outlier_end[i][2]])
+
+
+	# #draw samples lines passing through trocar
+	# for i in range(N_lines):
+	#     ax.plot([vect_start[i][0], vect_end[i][0]], [vect_start[i][1],vect_end[i][1]],zs=[vect_start[i][2],vect_end[i][2]])
+
+
+	#draw trocar point
+	ax.scatter(trocar_c[0], trocar_c[1], trocar_c[2], trocar_c[3], marker = "*")
+
+	plt.show()
