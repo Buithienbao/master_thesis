@@ -12,7 +12,7 @@ from skimage.draw import ellipsoid
 
 from pyntcloud import PyntCloud
 from plyfile import PlyData
-from itertools import product, combinations
+from itertools import product, combinations, cycle
 LOOP_NUM = 10
 N_lines = 1000
 # percentage = 0.2
@@ -23,20 +23,24 @@ end_range = 35
 # step = (end_range - start_range)/10
 step = 5
 
-def lineseg_dist(p, a, b, index = 0, list_idx_lines = []):
+def lineseg_dist(p, a, b, index = 0, list_idx_lines = [], threshold = 0):
 
 	dist = []
 	dist_val = 0
 	# list_idx = []
 	# temp_dist = []
 	count = 0
+
 	if len(list_idx_lines):
+
 		for i in range(len(list_idx_lines)):
 			x = a[list_idx_lines[i]] - b[list_idx_lines[i]]
 			t = np.dot(p-b[list_idx_lines[i]], x)/np.dot(x, x)
 			dist_val = np.linalg.norm(t*(a[list_idx_lines[i]]-b[list_idx_lines[i]])+b[list_idx_lines[i]]-p)
 			dist.append(dist_val)
+
 	else:
+
 		for i in range(len(a)):
 
 			x = a[i] - b[i]
@@ -45,6 +49,7 @@ def lineseg_dist(p, a, b, index = 0, list_idx_lines = []):
 			dist.append(dist_val)
 	
 	if index:
+		
 		# list_idx = np.zeros(index,dtype=np.uint8)
 		temp_dist = dist.copy()
 		temp_dist = sorted(temp_dist)
@@ -67,6 +72,13 @@ def lineseg_dist(p, a, b, index = 0, list_idx_lines = []):
 		final_dist = np.linalg.norm(temp_dist)
 		# print(final_dist)
 		return final_dist, list_idx_lines[list_idx]
+
+	if threshold:
+
+		temp_dist = np.array(dist.copy())
+		list_idx = np.where(temp_dist < threshold)
+
+		return list_idx_lines[list_idx]
 
 	return np.linalg.norm(dist)
 
@@ -1536,7 +1548,7 @@ def run_algo6(trocar, percentage):
 
 				min_list_idx = np.array([], dtype=np.uint8).reshape(0,N_data)
 				threshold = 10
-				temp_idx = np.zeros(N_trial,dtype=np.uint8)
+				# temp_idx = np.zeros(N_trial,dtype=np.uint8)
 				###
 				# while (threshold > 0.01):
 				
@@ -1550,8 +1562,8 @@ def run_algo6(trocar, percentage):
 					idx2 = random.choice(list_idx)
 					list_idx = np.delete(list_idx,np.where(list_idx==idx2))
 
-					temp_idx = np.append(temp_idx,idx1)
-					temp_idx = np.append(temp_idx,idx2)
+					# temp_idx = np.append(temp_idx,idx1)
+					# temp_idx = np.append(temp_idx,idx2)
 
 					estim_pt = find_intersection_3d_lines(vect_end[idx1],vect_start[idx1],vect_end[idx2],vect_start[idx2])
 
@@ -1806,6 +1818,177 @@ def DrawConfidenceRegion(s,center,rotation):
 	ax.plot_wireframe(x, y, z,  rstride=4, cstride=4, color='b', alpha=0.2)
 	plt.show()
 
+def visualize_model(trocar, pts = None, vect_end = None, vect_start = None, line_idx = None):
+
+	# Draw 3d graph
+
+	fig = plt.figure()
+	ax = fig.add_subplot(111, projection='3d')
+	ax.set_xlabel('X (mm)')
+	ax.set_ylabel('Y (mm)')
+	ax.set_zlabel('Z (mm)')
+
+	r = [-120, 120]
+	for s, e in combinations(np.array(list(product(r, r, r))), 2):
+		if np.sum(np.abs(s-e)) == r[1]-r[0]:
+			ax.plot3D(*zip(s, e), color="#0c0c0d")
+
+
+	# draw cloud points
+	if pts is not None:		
+		for i in range(vertex_data.size):
+			ax.scatter(pts[i,0],pts[i,1],pts[i,2],marker = ",",color="#948e8e")
+
+	if line_idx is not None:
+
+		#draw lines in each cluster
+		cycol = cycle('bgrcmk')
+		for i in range(len(line_idx)):
+			color = next(cycol)
+			for idx in line_idx[i]:
+				ax.plot([vect_start[idx][0], vect_end[idx][0]], [vect_start[idx][1],vect_end[idx][1]],zs=[vect_start[idx][2],vect_end[idx][2]],color=color)
+
+	else:
+		#draw all lines
+		if vect_start is not None:
+			N_lines = vect_start.shape[0]
+			for i in range(N_lines):
+			    ax.plot([vect_start[i][0], vect_end[i][0]], [vect_start[i][1],vect_end[i][1]],zs=[vect_start[i][2],vect_end[i][2]])
+
+
+	#draw trocar point
+	for i in range(trocar.shape[0]):
+		ax.scatter(trocar[i,0],trocar[i,1],trocar[i,2],marker = "*",color="b")
+
+	plt.show()
+
+def ransac_new(trocar,percentage):
+
+	# Generate lines to each trocar
+
+	vect_end = np.empty((0,3),dtype=np.float32)	
+	vect_start = np.empty((0,3),dtype=np.float32)	
+	N_lines = 1000
+	list_noise_percentage = np.arange(start_range, end_range + step,step,dtype=np.uint8)
+
+	num_trocar = trocar.shape[0]
+
+	list_idx_gt = []
+
+
+	for i in range(num_trocar):
+
+		end_temp, start_temp,_,_ = generate_perfect_data(int(N_lines*percentage[i]), trocar[i]) 
+		vect_end = np.append(vect_end,end_temp,axis=0)
+		vect_start = np.append(vect_start,start_temp,axis=0)
+
+		if i == 0:
+
+			list_temp = np.arange(N_lines*percentage[i])
+		else:
+			
+			list_temp = np.arange(N_lines*percentage[i-1],N_lines*percentage[i])
+
+		list_idx_gt.append(list_temp)
+	# vect_end_with_noise = add_gaussian_noise(vect_end, percentage=percentage[-1])
+
+	outlier_end, outlier_start,_ = generate_outliers(int(N_lines*percentage[-1]), trocar[0])
+	
+	list_rela_err = np.zeros((list_noise_percentage.shape[0],num_trocar,3),dtype=np.float32)
+	list_abs_err = np.zeros((list_noise_percentage.shape[0],num_trocar,3),dtype=np.float32)
+	list_eu_err = np.zeros((list_noise_percentage.shape[0],num_trocar,1),dtype=np.float32)
+	list_std_err = np.zeros((list_noise_percentage.shape[0],num_trocar,1),dtype=np.float32)
+
+	ite = 0
+
+	# outlier_end_noise = add_gaussian_noise(outlier_end,var=num,percentage=1)
+
+	vect_end =np.append(vect_end,outlier_end,axis=0)
+	vect_start= np.append(vect_start,outlier_start,axis=0)
+
+	num_trials = 100000000
+	sample_count = 0
+	sample_size = 2
+	P_min = 0.99
+	temp_per = 0
+
+	list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
+	# remove_idx = []
+	vect_clustered = []
+	threshold_dist = 0.01
+	threshold_inliers = 10
+
+	while(num_trials > sample_count):
+				
+		list_idx_copy = list_idx.copy()
+		
+		idx1 = random.choice(list_idx)
+		list_idx = np.delete(list_idx,np.where(list_idx==idx1))
+
+		idx2 = random.choice(list_idx)
+		list_idx = np.delete(list_idx,np.where(list_idx==idx2))
+
+		estim_pt = find_intersection_3d_lines(vect_end[idx1], vect_start[idx1], vect_end[idx2], vect_start[idx2])
+		
+		min_list_idx_temp = lineseg_dist(estim_pt, vect_start, vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+
+		num_inliers = len(min_list_idx_temp)
+
+		if num_inliers > threshold_inliers:
+
+			# remove_idx.append(min_list_idx_temp)
+
+			vect_clustered.append(min_list_idx_temp)
+			list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
+			flat_list = [item for sublist in vect_clustered for item in sublist]
+			flat_list = np.array(flat_list)
+			# print(sorted(np.unique(flat_list)))
+			list_idx = list_idx[~np.isin(list_idx,flat_list)]
+			
+			if len(list_idx) < 2:
+				
+				break
+			
+			list_idx = shuffle(list_idx)
+
+			sample_count += 1
+			print(num_inliers)
+
+			if N_lines == temp_per:
+
+				break
+
+			P_outlier = 1 - num_inliers/(N_lines-temp_per)
+			temp_per += num_inliers
+			num_trials = int(math.log(1-P_min)/math.log(1-(1-P_outlier)**sample_size))
+			print(num_trials)
+		
+		else:
+			
+			list_idx = np.append(list_idx, idx1)
+			list_idx = np.append(list_idx, idx2)
+		
+
+	if len(vect_clustered) == num_trocar+1:
+
+		for i in range(num_trocar):
+
+			vect_clustered[i] = sorted(vect_clustered[i])
+
+			list_idx_gt[i] = sorted(list_idx_gt[i])
+
+		print(sorted(vect_clustered) == sorted(list_idx_gt))
+
+	else:
+
+		print("Wrongly classify")
+
+	visualize_model(trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=vect_clustered)
+
+def get_cmap(n, name='hsv'):
+    '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct 
+    RGB color; the keyword argument name must be a standard mpl colormap name.'''
+    return plt.cm.get_cmap(name, n)
 
 ###################################################################
 
@@ -1821,46 +2004,18 @@ if __name__ == '__main__':
 	# percentage = np.array([0.35,0.27,0.18,0.2])
 	# run_algo4(trocar_c,percentage)
 
-	percentage = np.array([0.4,0.3,0.2,0.1])
+	percentage = np.array([0.35,0.25,0.15,0.1,0.15])
 	# run_algo5(trocar_c,percentage)
-	# Read the point cloud
-	# obj_reader = PyntCloud.from_file("liver_simplified.ply")
-	# print(obj_reader.points.describe())
-	plydata = PlyData.read("liver_simplified.ply")
-	vertex_data = plydata['vertex'].data # numpy array with fields ['x', 'y', 'z']
-	pts = np.zeros([vertex_data.size, 3])
-	pts[:, 0] = vertex_data['x']
-	pts[:, 1] = vertex_data['y']
-	pts[:, 2] = vertex_data['z']
+	
+	ransac_new(trocar_c,percentage)
+	# # Read the point cloud
 
-	# Draw 3d graph
-
-	fig = plt.figure()
-	ax = fig.add_subplot(111, projection='3d')
-	ax.set_xlabel('X (mm)')
-	ax.set_ylabel('Y (mm)')
-	ax.set_zlabel('Z (mm)')
-	# draw cloud points
-	# draw cloud points
-	for i in range(vertex_data.size):
-		ax.scatter(pts[i,0],pts[i,1],pts[i,2],marker = ",",color="#948e8e")
-
-	r = [-120, 120]
-	for s, e in combinations(np.array(list(product(r, r, r))), 2):
-		if np.sum(np.abs(s-e)) == r[1]-r[0]:
-			ax.plot3D(*zip(s, e), color="#0c0c0d")
-	# #draw outlier lines
-	# for i in range(vertex_data.size):
-	#     ax.plot([vect_outlier_start[i][0], vect_outlier_end[i][0]], [vect_outlier_start[i][1],vect_outlier_end[i][1]],zs=[vect_outlier_start[i][2],vect_outlier_end[i][2]])
+	# plydata = PlyData.read("liver_simplified.ply")
+	# vertex_data = plydata['vertex'].data # numpy array with fields ['x', 'y', 'z']
+	# pts = np.zeros([vertex_data.size, 3])
+	# pts[:, 0] = vertex_data['x']
+	# pts[:, 1] = vertex_data['y']
+	# pts[:, 2] = vertex_data['z']
 
 
-	# #draw samples lines passing through trocar
-	# for i in range(N_lines):
-	#     ax.plot([vect_start[i][0], vect_end[i][0]], [vect_start[i][1],vect_end[i][1]],zs=[vect_start[i][2],vect_end[i][2]])
-
-
-	#draw trocar point
-	for i in range(trocar_c.shape[0]):
-		ax.scatter(trocar_c[i,0],trocar_c[i,1],trocar_c[i,2],marker = "*",color="b")
-
-	plt.show()
+	# visualize_model(trocar_c)
