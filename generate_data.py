@@ -41,8 +41,8 @@ def generate_perfect_data(N_lines = num_data, trocar = trocar_c):
         vect_rand[i] = random_unit_vector()
 
     vect_trocar = np.tile(trocar,[N_lines,1]).astype(np.float32)
-    vect_end = vect_trocar + vect_rand
-    vect_start = vect_trocar - vect_rand
+    vect_end = 2*vect_trocar + vect_rand
+    vect_start = -2*vect_trocar - vect_rand
 
     return vect_end, vect_start, trocar_c, vect_rand
 

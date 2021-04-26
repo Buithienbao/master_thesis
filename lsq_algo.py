@@ -1842,9 +1842,10 @@ def visualize_model(trocar, pts = None, vect_end = None, vect_start = None, line
 	if line_idx is not None:
 
 		#draw lines in each cluster
-		cycol = cycle('bgrcmk')
+		cycol = cycle('grcmk')
 		for i in range(len(line_idx)):
 			color = next(cycol)
+			print("cluster: ",i)
 			for idx in line_idx[i]:
 				ax.plot([vect_start[idx][0], vect_end[idx][0]], [vect_start[idx][1],vect_end[idx][1]],zs=[vect_start[idx][2],vect_end[idx][2]],color=color)
 
@@ -1874,32 +1875,36 @@ def ransac_new(trocar,percentage):
 	num_trocar = trocar.shape[0]
 
 	list_idx_gt = []
-
+	cur = 0
+	last = 0
 
 	for i in range(num_trocar):
 
 		end_temp, start_temp,_,_ = generate_perfect_data(int(N_lines*percentage[i]), trocar[i]) 
 		vect_end = np.append(vect_end,end_temp,axis=0)
 		vect_start = np.append(vect_start,start_temp,axis=0)
+		cur += int(N_lines*percentage[i])
+		# print("cur: {}, last: {}",cur,last)
 
-		if i == 0:
+		list_temp = np.arange(last, cur)
 
-			list_temp = np.arange(N_lines*percentage[i])
-		else:
-			
-			list_temp = np.arange(N_lines*percentage[i-1],N_lines*percentage[i])
+		# print("List temp: ",list_temp)
 
 		list_idx_gt.append(list_temp)
-	# vect_end_with_noise = add_gaussian_noise(vect_end, percentage=percentage[-1])
+		
+		last += int(N_lines*percentage[i])
 
-	outlier_end, outlier_start,_ = generate_outliers(int(N_lines*percentage[-1]), trocar[0])
+	# vect_end_with_noise = add_gaussian_noise(vect_end, percentage=percentage[-1])
 	
+	cur += int(N_lines*percentage[-1])
+	outlier_end, outlier_start,_ = generate_outliers(int(N_lines*percentage[-1]), trocar[0])
+	list_temp = np.arange(last,cur)
+	list_idx_gt.append(list_temp)
+
 	list_rela_err = np.zeros((list_noise_percentage.shape[0],num_trocar,3),dtype=np.float32)
 	list_abs_err = np.zeros((list_noise_percentage.shape[0],num_trocar,3),dtype=np.float32)
 	list_eu_err = np.zeros((list_noise_percentage.shape[0],num_trocar,1),dtype=np.float32)
 	list_std_err = np.zeros((list_noise_percentage.shape[0],num_trocar,1),dtype=np.float32)
-
-	ite = 0
 
 	# outlier_end_noise = add_gaussian_noise(outlier_end,var=num,percentage=1)
 
@@ -1918,72 +1923,83 @@ def ransac_new(trocar,percentage):
 	threshold_dist = 0.01
 	threshold_inliers = 10
 
-	while(num_trials > sample_count):
-				
-		list_idx_copy = list_idx.copy()
+
+	# while(num_trials > sample_count):
 		
-		idx1 = random.choice(list_idx)
-		list_idx = np.delete(list_idx,np.where(list_idx==idx1))
-
-		idx2 = random.choice(list_idx)
-		list_idx = np.delete(list_idx,np.where(list_idx==idx2))
-
-		estim_pt = find_intersection_3d_lines(vect_end[idx1], vect_start[idx1], vect_end[idx2], vect_start[idx2])
+	# 	sample_count += 1
 		
-		min_list_idx_temp = lineseg_dist(estim_pt, vect_start, vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+	# 	list_idx_copy = list_idx.copy()
+		
+	# 	idx1 = random.choice(list_idx)
+	# 	# list_idx = np.delete(list_idx,np.where(list_idx==idx1))
 
-		num_inliers = len(min_list_idx_temp)
-
-		if num_inliers > threshold_inliers:
-
-			# remove_idx.append(min_list_idx_temp)
-
-			vect_clustered.append(min_list_idx_temp)
-			list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
-			flat_list = [item for sublist in vect_clustered for item in sublist]
-			flat_list = np.array(flat_list)
-			# print(sorted(np.unique(flat_list)))
-			list_idx = list_idx[~np.isin(list_idx,flat_list)]
+	# 	idx2 = random.choice(list_idx)
+		
+	# 	# while(idx2 == idx1):
 			
-			if len(list_idx) < 2:
-				
-				break
-			
-			list_idx = shuffle(list_idx)
+	# 	# 	idx2 = random.choice(list_idx)
+	# 	# list_idx = np.delete(list_idx,np.where(list_idx==idx2))
 
-			sample_count += 1
-			print(num_inliers)
-
-			if N_lines == temp_per:
-
-				break
-
-			P_outlier = 1 - num_inliers/(N_lines-temp_per)
-			temp_per += num_inliers
-			num_trials = int(math.log(1-P_min)/math.log(1-(1-P_outlier)**sample_size))
-			print(num_trials)
+	# 	estim_pt = find_intersection_3d_lines(vect_end[idx1], vect_start[idx1], vect_end[idx2], vect_start[idx2])
 		
-		else:
+	# 	min_list_idx_temp = lineseg_dist(estim_pt, vect_start, vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+
+	# 	num_inliers = len(min_list_idx_temp)
+	# 	print(num_inliers)
+	# 	#update RANSAC params
+	# 	P_outlier = 1 - num_inliers/(N_lines-temp_per)
+	# 	num_trials = int(math.log(1-P_min)/math.log(1-(1-P_outlier)**sample_size))
+
+	# 	if num_inliers > threshold_inliers:
+
+	# 		# remove_idx.append(min_list_idx_temp)
+
+	# 		vect_clustered.append(min_list_idx_temp)
+	# 		list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
+	# 		flat_list = [item for sublist in vect_clustered for item in sublist]
+	# 		flat_list = np.array(flat_list)
+	# 		# print(sorted(np.unique(flat_list)))
+	# 		list_idx = list_idx[~np.isin(list_idx,flat_list)]
 			
-			list_idx = np.append(list_idx, idx1)
-			list_idx = np.append(list_idx, idx2)
-		
+	# 		if len(list_idx) < 2:
 
-	if len(vect_clustered) == num_trocar+1:
+	# 			vect_clustered.append(list_idx)
+	# 			list_idx = []
+	# 			break
 
-		for i in range(num_trocar):
+	# 		list_idx = shuffle(list_idx)
 
-			vect_clustered[i] = sorted(vect_clustered[i])
+	# 		#reset RANSAC params
+	# 		sample_count = 0
+	# 		num_trials = 100000000
+	# 		temp_per += num_inliers
+			
+	# 		print(num_inliers)
 
-			list_idx_gt[i] = sorted(list_idx_gt[i])
+	# #Store the last cluster (if any)
+	# if len(list_idx):
 
-		print(sorted(vect_clustered) == sorted(list_idx_gt))
+	# 	vect_clustered.append(list_idx)
+			 
+	# if len(vect_clustered) == num_trocar+1:
 
-	else:
+	# 	for i in range(num_trocar):
 
-		print("Wrongly classify")
+	# 		vect_clustered[i] = sorted(vect_clustered[i])
 
-	visualize_model(trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=vect_clustered)
+	# 		list_idx_gt[i] = sorted(list_idx_gt[i])
+
+	# 	print(sorted(vect_clustered) == sorted(list_idx_gt))
+
+	# else:
+
+	# 	print("Wrongly classify")
+
+	# visualize_model(trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=vect_clustered)
+	# print("List_idx_gt: ",list_idx_gt)
+	print("np.unique start: ",np.unique(vect_start))
+	print("np.unique end: ", np.unique(vect_end))
+	visualize_model(trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=list_idx_gt)
 
 def get_cmap(n, name='hsv'):
     '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct 
@@ -2008,14 +2024,26 @@ if __name__ == '__main__':
 	# run_algo5(trocar_c,percentage)
 	
 	ransac_new(trocar_c,percentage)
-	# # Read the point cloud
+	# # Draw 3d graph
 
-	# plydata = PlyData.read("liver_simplified.ply")
-	# vertex_data = plydata['vertex'].data # numpy array with fields ['x', 'y', 'z']
-	# pts = np.zeros([vertex_data.size, 3])
-	# pts[:, 0] = vertex_data['x']
-	# pts[:, 1] = vertex_data['y']
-	# pts[:, 2] = vertex_data['z']
+	# fig = plt.figure()
+	# ax = fig.add_subplot(111, projection='3d')
+
+	# #draw outliers point
+	# # for i in range(N_outliers):
+	# #     ax.scatter(outliers[i][0],outliers[i][1],outliers[i][2],marker = "o")
+
+	# #draw outlier lines
+	# for i in range(N_outliers):
+	#     ax.plot([vect_outlier_start[i][0], vect_outlier_end[i][0]], [vect_outlier_start[i][1],vect_outlier_end[i][1]],zs=[vect_outlier_start[i][2],vect_outlier_end[i][2]])
 
 
-	# visualize_model(trocar_c)
+	# # #draw samples lines passing through trocar
+	# # for i in range(N_lines):
+	# #     ax.plot([vect_start[i][0], vect_end[i][0]], [vect_start[i][1],vect_end[i][1]],zs=[vect_start[i][2],vect_end[i][2]])
+
+
+	# #draw trocar point
+	# # ax.scatter(trocar_c[0], trocar_c[1], trocar_c[2], marker = "*")
+
+	# plt.show()
