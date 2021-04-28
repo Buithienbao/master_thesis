@@ -1842,7 +1842,7 @@ def visualize_model(trocar, pts = None, vect_end = None, vect_start = None, line
 	if line_idx is not None:
 
 		#draw lines in each cluster
-		cycol = cycle('grcmy')
+		cycol = cycle('grcmyk')
 		for i in range(len(line_idx)):
 			color = next(cycol)
 			for idx in line_idx[i]:
@@ -1907,7 +1907,7 @@ def ransac_new(trocar,percentage):
 
 		# print("List temp: ",list_temp)
 
-		list_idx_gt.append(list_temp)
+		list_idx_gt.append(list_temp.tolist())
 		
 		last += int(N_lines*percentage_new[i])
 
@@ -1927,11 +1927,11 @@ def ransac_new(trocar,percentage):
 
 		if i == 0:
 
-			list_idx_gt.append(list_temp)
+			list_idx_gt.append(list_temp.tolist())
 
 		else:
 
-			list_idx_gt[num_trocar] = np.append(list_idx_gt[num_trocar],list_temp)
+			list_idx_gt[num_trocar].extend(list_temp.tolist())
 
 		last += int(N_lines*percentage_new[num_trocar+i])
 
@@ -1955,7 +1955,7 @@ def ransac_new(trocar,percentage):
 	# remove_idx = []
 	vect_clustered = []
 	threshold_dist = 1
-	threshold_inliers = 10
+	threshold_inliers = 20
 
 	while(num_trials > sample_count):
 		
@@ -1989,7 +1989,7 @@ def ransac_new(trocar,percentage):
 
 			# remove_idx.append(min_list_idx_temp)
 
-			vect_clustered.append(min_list_idx_temp)
+			vect_clustered.append(min_list_idx_temp.tolist())
 			list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
 			flat_list = [item for sublist in vect_clustered for item in sublist]
 			flat_list = np.array(flat_list)
@@ -1998,7 +1998,7 @@ def ransac_new(trocar,percentage):
 			
 			if len(list_idx) < 2:
 
-				vect_clustered.append(list_idx)
+				vect_clustered.append(list_idx.tolist())
 				list_idx = []
 				break
 
@@ -2014,7 +2014,7 @@ def ransac_new(trocar,percentage):
 	#Store the last cluster (if any)
 	if len(list_idx):
 
-		vect_clustered.append(list_idx)
+		vect_clustered.append(list_idx.tolist())
 			 
 	if len(vect_clustered) == num_trocar+1:
 
@@ -2024,24 +2024,31 @@ def ransac_new(trocar,percentage):
 
 			list_idx_gt[i] = sorted(list_idx_gt[i])
 
-		y_true = sorted(list_idx_gt)
-		y_pred = sorted(vect_clustered)
+		list_idx_gt_sorted = sorted(list_idx_gt)
+		vect_clustered_sorted = sorted(vect_clustered)
 
-		for i in range(num_trocar):
-			print(y_true[i])
-			print(y_pred[i])
-			
-		# cm = confusion_matrix(y_true,y_pred,)
-		# disp = ConfusionMatrixDisplay(confusion_matrix=cm,
-  #                             display_labels=display_labels)
+		y_true = np.arange(N_lines)
+		y_true = y_true.tolist()
 
+		y_pred = np.arange(N_lines)
+		y_pred = y_pred.tolist()
 
-		# # NOTE: Fill all variables here with default values of the plot_confusion_matrix
-		# disp = disp.plot(include_values=include_values,
-		#                  cmap=cmap, ax=ax, xticks_rotation=xticks_rotation)
+		# print(list_idx_gt_sorted)
+		for i in range(len(list_idx_gt_sorted)):
+			for j in range(len(list_idx_gt_sorted[i])):
+				if i == len(list_idx_gt_sorted) - 1:
+					y_true[list_idx_gt_sorted[i][j]] = "Incorrect Data"
+				else:
+					y_true[list_idx_gt_sorted[i][j]] = "Trocar "+str(i+1)
 
-		# plt.show()
-		# print(sorted(vect_clustered) == sorted(list_idx_gt))
+		for i in range(len(vect_clustered_sorted)):
+			for j in range(len(vect_clustered_sorted[i])):
+				if i == len(vect_clustered_sorted) - 1:
+					y_pred[vect_clustered_sorted[i][j]] = "Incorrect Data"
+				else:
+					y_pred[vect_clustered_sorted[i][j]] = "Trocar "+str(i+1)
+
+		plot_cfs_matrix(y_true,y_pred)
 
 
 	else:
@@ -2064,6 +2071,18 @@ def get_cmap(n, name='hsv'):
     '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct 
     RGB color; the keyword argument name must be a standard mpl colormap name.'''
     return plt.cm.get_cmap(name, n)
+
+def plot_cfs_matrix(y_true,y_pred):
+
+
+	cm = confusion_matrix(y_true,y_pred,labels=["Trocar 1","Trocar 2","Trocar 3","Trocar 4","Incorrect Data"],normalize='true')
+	disp = ConfusionMatrixDisplay(confusion_matrix=cm,
+	                      display_labels=["Trocar 1","Trocar 2","Trocar 3","Trocar 4","Incorrect Data"]).plot()
+
+
+	# NOTE: Fill all variables here with default values of the plot_confusion_matrix
+	plt.show()
+
 
 ###################################################################
 
