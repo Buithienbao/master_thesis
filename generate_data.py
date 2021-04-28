@@ -31,7 +31,7 @@ def create_random_point(x0,y0,z0,distance):
     
     return [x0+x1, y0 +y, z0]
 
-def generate_perfect_data(N_lines = num_data, trocar = trocar_c):
+def generate_perfect_data(N_lines = num_data, trocar = trocar_c,scale1 = 1, scale2 = 1):
 
     # vect_rand = np.random.randint(100, size=(N_lines,3)).astype(np.float32)
     vect_rand = np.zeros((N_lines,3),dtype=np.float32)
@@ -41,12 +41,13 @@ def generate_perfect_data(N_lines = num_data, trocar = trocar_c):
         vect_rand[i] = random_unit_vector()
 
     vect_trocar = np.tile(trocar,[N_lines,1]).astype(np.float32)
-    vect_end = 2*vect_trocar + vect_rand
-    vect_start = -2*vect_trocar - vect_rand
+
+    vect_start = vect_trocar - 50*vect_rand
+    vect_end = vect_trocar + 10*vect_rand
 
     return vect_end, vect_start, trocar_c, vect_rand
 
-def generate_outliers(N_outliers = 20, trocar = trocar_c):
+def generate_outliers(N_outliers = 20, trocar = trocar_c,scale1 = 1, scale2 = 1):
     """
     generate outlier data
 
@@ -84,8 +85,8 @@ def generate_outliers(N_outliers = 20, trocar = trocar_c):
     for i in range(N_outliers):
         vect_outlier_rand[i] = random_unit_vector()
     
-    vect_outlier_start = outliers - vect_outlier_rand
-    vect_outlier_end = vect_outlier_rand + outliers
+    vect_outlier_start = outliers - 50*vect_outlier_rand
+    vect_outlier_end = 10*vect_outlier_rand + outliers
 
     return vect_outlier_end, vect_outlier_start, vect_outlier_rand
 
