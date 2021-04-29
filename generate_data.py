@@ -42,8 +42,8 @@ def generate_perfect_data(N_lines = num_data, trocar = trocar_c,scale1 = 1, scal
 
     vect_trocar = np.tile(trocar,[N_lines,1]).astype(np.float32)
 
-    vect_start = vect_trocar - 50*vect_rand
-    vect_end = vect_trocar + 10*vect_rand
+    vect_start = vect_trocar - scale1*scale2*vect_rand
+    vect_end = vect_trocar + scale1*vect_rand
 
     return vect_end, vect_start, trocar_c, vect_rand
 
@@ -69,10 +69,12 @@ def generate_outliers(N_outliers = 20, trocar = trocar_c,scale1 = 1, scale2 = 1)
 
     outliers = []
 
+    distance = np.arange(10,50,5)
+    cydist = cycle(distance)
     for i in range(N_outliers):
-
-      outlier = create_random_point(trocar[0], trocar[1], trocar[2], 15)
-      outliers.append(outlier)
+        dist = next(cydist)
+        outlier = create_random_point(trocar[0], trocar[1], trocar[2], dist)
+        outliers.append(outlier)
 
 
     outliers = np.array(outliers).astype(np.float32)
@@ -85,22 +87,20 @@ def generate_outliers(N_outliers = 20, trocar = trocar_c,scale1 = 1, scale2 = 1)
     for i in range(N_outliers):
         vect_outlier_rand[i] = random_unit_vector()
     
-    vect_outlier_start = outliers - 50*vect_outlier_rand
-    vect_outlier_end = 10*vect_outlier_rand + outliers
+    vect_outlier_start = outliers - scale1*scale2*vect_outlier_rand
+    vect_outlier_end = scale1*vect_outlier_rand + outliers
 
     return vect_outlier_end, vect_outlier_start, vect_outlier_rand
 
-def add_gaussian_noise(data, mean=0, var=0.1, percentage = 0.2):
+def add_gaussian_noise(data, mean=0, sigma=0.1, percentage = 0.2):
 
-    if var == 0:
+    if sigma == 0:
         
         return data
 
     num_data = len(data)
 
     num_outlier = int(num_data*percentage)
-
-    sigma = np.sqrt(var)
 
     gaussian = np.random.normal(mean,sigma,(num_outlier,3))
 
@@ -116,7 +116,7 @@ def add_gaussian_noise(data, mean=0, var=0.1, percentage = 0.2):
   
         j += 1
     
-    return data_with_noise    
+    return data_with_noise, random_list   
 
 # # Draw 3d graph
 
