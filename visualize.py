@@ -7,6 +7,7 @@ from plyfile import PlyData
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from skimage import measure
+from matplotlib.lines import Line2D
 
 def DrawConfidenceRegion(s,center,rotation,trocar):
 
@@ -84,6 +85,14 @@ def visualize_model(trocar, pts = None, vect_end = None, vect_start = None, line
 			for val in value:
 
 				ax.plot([vect_start[val][0], vect_end[val][0]], [vect_start[val][1],vect_end[val][1]],zs=[vect_start[val][2],vect_end[val][2]],color=color)
+
+		custom_lines = [Line2D([0], [0], color='g', lw=2),
+						Line2D([0], [0], color='r', lw=2),
+						Line2D([0], [0], color='c', lw=2),
+						Line2D([0], [0], color='m', lw=2),
+						Line2D([0], [0], color='y', lw=2)]
+
+		ax.legend(custom_lines, list(line_idx.keys()),loc='upper right')
 
 	else:
 		#draw all lines
