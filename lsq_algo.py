@@ -1901,136 +1901,97 @@ def ransac_new(trocar,percentage):
 	threshold_dist = 1
 	threshold_inliers = 20
 	start_time = time.time()
-	while(num_trials > sample_count):
+	# while(num_trials > sample_count):
 		
-		sample_count += 1
+	# 	sample_count += 1
 		
-		list_idx_copy = list_idx.copy()
+	# 	list_idx_copy = list_idx.copy()
 		
-		idx1 = random.choice(list_idx)
-		# list_idx = np.delete(list_idx,np.where(list_idx==idx1))
+	# 	idx1 = random.choice(list_idx)
+	# 	# list_idx = np.delete(list_idx,np.where(list_idx==idx1))
 
-		idx2 = random.choice(list_idx)
+	# 	idx2 = random.choice(list_idx)
 		
-		# while(idx2 == idx1):
+	# 	# while(idx2 == idx1):
 			
-		# 	idx2 = random.choice(list_idx)
-		# list_idx = np.delete(list_idx,np.where(list_idx==idx2))
+	# 	# 	idx2 = random.choice(list_idx)
+	# 	# list_idx = np.delete(list_idx,np.where(list_idx==idx2))
 
-		estim_pt = find_intersection_3d_lines(vect_end[idx1], vect_start[idx1], vect_end[idx2], vect_start[idx2])
+	# 	estim_pt = find_intersection_3d_lines(vect_end[idx1], vect_start[idx1], vect_end[idx2], vect_start[idx2])
 		
-		min_list_idx_temp = lineseg_dist(estim_pt, vect_start, vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+	# 	min_list_idx_temp = lineseg_dist(estim_pt, vect_start, vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
 
-		num_inliers = len(min_list_idx_temp)
+	# 	num_inliers = len(min_list_idx_temp)
 
-		#update RANSAC params
-		if num_inliers:
+	# 	#update RANSAC params
+	# 	if num_inliers:
 
-			P_outlier = 1 - num_inliers/(N_lines-temp_per)
+	# 		P_outlier = 1 - num_inliers/(N_lines-temp_per)
 			
-			if not P_outlier:
+	# 		if not P_outlier:
 
-				vect_clustered.append(list_idx.tolist())
-				list_idx = []
-				break
+	# 			vect_clustered.append(list_idx.tolist())
+	# 			list_idx = []
+	# 			break
 
 
-			num_trials = int(math.log(1-P_min)/math.log(1-(1-P_outlier)**sample_size))
+	# 		num_trials = int(math.log(1-P_min)/math.log(1-(1-P_outlier)**sample_size))
 
-		if num_inliers > threshold_inliers:
+	# 	if num_inliers > threshold_inliers:
 
-			# remove_idx.append(min_list_idx_temp)
+	# 		# remove_idx.append(min_list_idx_temp)
 
-			vect_clustered.append(min_list_idx_temp.tolist())
-			list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
-			flat_list = [item for sublist in vect_clustered for item in sublist]
-			flat_list = np.array(flat_list)
-			# print(sorted(np.unique(flat_list)))
-			list_idx = list_idx[~np.isin(list_idx,flat_list)]
+	# 		vect_clustered.append(min_list_idx_temp.tolist())
+	# 		list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
+	# 		flat_list = [item for sublist in vect_clustered for item in sublist]
+	# 		flat_list = np.array(flat_list)
+	# 		# print(sorted(np.unique(flat_list)))
+	# 		list_idx = list_idx[~np.isin(list_idx,flat_list)]
 			
-			if not len(list_idx):
+	# 		if not len(list_idx):
 
-				break
+	# 			break
 
-			elif len(list_idx) < 3:
+	# 		elif len(list_idx) < 3:
 
-				vect_clustered.append(list_idx.tolist())
-				list_idx = []
-				break
+	# 			vect_clustered.append(list_idx.tolist())
+	# 			list_idx = []
+	# 			break
 
-			list_idx = shuffle(list_idx)
+	# 		list_idx = shuffle(list_idx)
 
-			#reset RANSAC params
-			sample_count = 0
-			num_trials = 100000000
-			temp_per += num_inliers
-			# print(num_inliers)		
-
-
-	#Store the last cluster (if any)
-	if len(list_idx):
-
-		vect_clustered.append(list_idx.tolist())
-	print("--- %s seconds ---" % (time.time() - start_time))
-	if len(vect_clustered) < num_trocar+2:
-
-		for key,value in dict_gt.items():
-
-			gt_temp = set(value)
-			match_max = 0
-			match_index = 0
-
-			for i in range(len(vect_clustered)):
-
-				vect_temp = set(vect_clustered[i])
-
-				match = len(gt_temp & vect_temp)
-
-				if match > match_max:
-
-					match_max = match
-					match_index = i
-
-			dict_cluster[key]  = vect_clustered[match_index]
-
-		y_true = np.arange(N_lines)
-		y_true = y_true.tolist()
-
-		y_pred = np.arange(N_lines)
-		y_pred = y_pred.tolist()
-
-		for key,value in dict_gt.items():
-
-			for val in value:
-
-				y_true[val] = key
-
-		for key,value in dict_cluster.items():
-
-			for val in value:
-
-				y_pred[val] = key
-
-		plot_cfs_matrix(y_true,y_pred,list(dict_gt.keys()))
+	# 		#reset RANSAC params
+	# 		sample_count = 0
+	# 		num_trials = 100000000
+	# 		temp_per += num_inliers
+	# 		# print(num_inliers)		
 
 
-	# if len(vect_clustered) == num_trocar+1 and percentage[-1]:
+	# #Store the last cluster (if any)
+	# if len(list_idx):
 
-	# 	# pass
+	# 	vect_clustered.append(list_idx.tolist())
+	# print("--- %s seconds ---" % (time.time() - start_time))
+	# if len(vect_clustered) < num_trocar+2:
 
-	# 	# for i in range(num_trocar):
+	# 	for key,value in dict_gt.items():
 
-	# 	# 	vect_clustered[i] = sorted(vect_clustered[i])
+	# 		gt_temp = set(value)
+	# 		match_max = 0
+	# 		match_index = 0
 
-	# 	# 	list_idx_gt[i] = sorted(list_idx_gt[i])
+	# 		for i in range(len(vect_clustered)):
 
-	# 	# list_idx_gt_sorted = sorted(list_idx_gt)
-	# 	# vect_clustered_sorted = sorted(vect_clustered)
+	# 			vect_temp = set(vect_clustered[i])
 
-	# 	# for i in range(len(vect_clustered_sorted)):
-			
-	# 	# 	print(len(vect_clustered_sorted[i]))
-	# 	# 	print(len(list_idx_gt_sorted[i]))
+	# 			match = len(gt_temp & vect_temp)
+
+	# 			if match > match_max:
+
+	# 				match_max = match
+	# 				match_index = i
+
+	# 		dict_cluster[key]  = vect_clustered[match_index]
 
 	# 	y_true = np.arange(N_lines)
 	# 	y_true = y_true.tolist()
@@ -2038,101 +1999,140 @@ def ransac_new(trocar,percentage):
 	# 	y_pred = np.arange(N_lines)
 	# 	y_pred = y_pred.tolist()
 
-	# 	# print(list_idx_gt_sorted)
-	# 	# for i in range(len(list_idx_gt_sorted)):
-	# 	# 	for j in range(len(list_idx_gt_sorted[i])):
-	# 	# 		if i == len(list_idx_gt_sorted) - 1:
-	# 	# 			y_true[list_idx_gt_sorted[i][j]] = "Incorrect Data"
-	# 	# 		else:
-	# 	# 			y_true[list_idx_gt_sorted[i][j]] = "Trocar "+str(i+1)
+	# 	for key,value in dict_gt.items():
 
-	# 	# for i in range(len(vect_clustered_sorted)):
-	# 	# 	for j in range(len(vect_clustered_sorted[i])):
-	# 	# 		if i == len(vect_clustered_sorted) - 1:
-	# 	# 			y_pred[vect_clustered_sorted[i][j]] = "Incorrect Data"
-	# 	# 		else:
-	# 	# 			y_pred[vect_clustered_sorted[i][j]] = "Trocar "+str(i+1)
+	# 		for val in value:
 
-	# 	plot_cfs_matrix(y_true,y_pred,include_noise=True)
+	# 			y_true[val] = key
 
-	# elif len(vect_clustered) == num_trocar and not percentage[-1]:
+	# 	for key,value in dict_cluster.items():
 
-	# 	for i in range(num_trocar):
+	# 		for val in value:
 
-	# 		vect_clustered[i] = sorted(vect_clustered[i])
+	# 			y_pred[val] = key
 
-	# 		list_idx_gt[i] = sorted(list_idx_gt[i])
-
-	# 	list_idx_gt_sorted = sorted(list_idx_gt)
-	# 	vect_clustered_sorted = sorted(vect_clustered)
-
-	# 	y_true = np.arange(N_lines)
-	# 	y_true = y_true.tolist()
-
-	# 	y_pred = np.arange(N_lines)
-	# 	y_pred = y_pred.tolist()
-
-	# 	# print(list_idx_gt_sorted)
-	# 	for i in range(len(list_idx_gt_sorted)):
-	# 		for j in range(len(list_idx_gt_sorted[i])):
-	# 				y_true[list_idx_gt_sorted[i][j]] = "Trocar "+str(i+1)
-
-	# 	for i in range(len(vect_clustered_sorted)):
-	# 		for j in range(len(vect_clustered_sorted[i])):
-	# 				y_pred[vect_clustered_sorted[i][j]] = "Trocar "+str(i+1)
-
-	# 	plot_cfs_matrix(y_true,y_pred)
+	# 	plot_cfs_matrix(y_true,y_pred,list(dict_gt.keys()))
 
 
-	else:
+	# # if len(vect_clustered) == num_trocar+1 and percentage[-1]:
 
-		print("Wrongly classify")
-		return
+	# # 	# pass
 
-	ite = 0
+	# # 	# for i in range(num_trocar):
 
-	for key,value in dict_cluster.items():
+	# # 	# 	vect_clustered[i] = sorted(vect_clustered[i])
 
-		if ite == num_trocar:
+	# # 	# 	list_idx_gt[i] = sorted(list_idx_gt[i])
 
-			break
+	# # 	# list_idx_gt_sorted = sorted(list_idx_gt)
+	# # 	# vect_clustered_sorted = sorted(vect_clustered)
 
-		vect_start_clustered = np.zeros((len(value),3),dtype=np.float32)
-		vect_end_clustered = np.zeros((len(value),3),dtype=np.float32)	
+	# # 	# for i in range(len(vect_clustered_sorted)):
+			
+	# # 	# 	print(len(vect_clustered_sorted[i]))
+	# # 	# 	print(len(list_idx_gt_sorted[i]))
 
-		vect_start_clustered = vect_start[value]
-		vect_end_clustered = vect_end[value]
+	# # 	y_true = np.arange(N_lines)
+	# # 	y_true = y_true.tolist()
 
-		vect_rand_clustered = (vect_end_clustered - vect_start_clustered)/(SCALE_COEF1*(SCALE_COEF2+1))
+	# # 	y_pred = np.arange(N_lines)
+	# # 	y_pred = y_pred.tolist()
 
-		a,b = generate_coef(vect_rand_clustered, vect_end_clustered)
+	# # 	# print(list_idx_gt_sorted)
+	# # 	# for i in range(len(list_idx_gt_sorted)):
+	# # 	# 	for j in range(len(list_idx_gt_sorted[i])):
+	# # 	# 		if i == len(list_idx_gt_sorted) - 1:
+	# # 	# 			y_true[list_idx_gt_sorted[i][j]] = "Incorrect Data"
+	# # 	# 		else:
+	# # 	# 			y_true[list_idx_gt_sorted[i][j]] = "Trocar "+str(i+1)
 
-		final_sol,residuals_err = linear_least_squares(a,b,residuals=True)
+	# # 	# for i in range(len(vect_clustered_sorted)):
+	# # 	# 	for j in range(len(vect_clustered_sorted[i])):
+	# # 	# 		if i == len(vect_clustered_sorted) - 1:
+	# # 	# 			y_pred[vect_clustered_sorted[i][j]] = "Incorrect Data"
+	# # 	# 		else:
+	# # 	# 			y_pred[vect_clustered_sorted[i][j]] = "Trocar "+str(i+1)
 
-		rela_err = relative_err_calc(final_sol,trocar[ite])
+	# # 	plot_cfs_matrix(y_true,y_pred,include_noise=True)
 
-		abs_err = abs_err_calc(final_sol,trocar[ite])
+	# # elif len(vect_clustered) == num_trocar and not percentage[-1]:
 
-		eu_err = eudist_err_calc(final_sol,trocar[ite])
+	# # 	for i in range(num_trocar):
+
+	# # 		vect_clustered[i] = sorted(vect_clustered[i])
+
+	# # 		list_idx_gt[i] = sorted(list_idx_gt[i])
+
+	# # 	list_idx_gt_sorted = sorted(list_idx_gt)
+	# # 	vect_clustered_sorted = sorted(vect_clustered)
+
+	# # 	y_true = np.arange(N_lines)
+	# # 	y_true = y_true.tolist()
+
+	# # 	y_pred = np.arange(N_lines)
+	# # 	y_pred = y_pred.tolist()
+
+	# # 	# print(list_idx_gt_sorted)
+	# # 	for i in range(len(list_idx_gt_sorted)):
+	# # 		for j in range(len(list_idx_gt_sorted[i])):
+	# # 				y_true[list_idx_gt_sorted[i][j]] = "Trocar "+str(i+1)
+
+	# # 	for i in range(len(vect_clustered_sorted)):
+	# # 		for j in range(len(vect_clustered_sorted[i])):
+	# # 				y_pred[vect_clustered_sorted[i][j]] = "Trocar "+str(i+1)
+
+	# # 	plot_cfs_matrix(y_true,y_pred)
+
+
+	# else:
+
+	# 	print("Wrongly classify")
+	# 	return
+
+	# ite = 0
+
+	# for key,value in dict_cluster.items():
+
+	# 	if ite == num_trocar:
+
+	# 		break
+
+	# 	vect_start_clustered = np.zeros((len(value),3),dtype=np.float32)
+	# 	vect_end_clustered = np.zeros((len(value),3),dtype=np.float32)	
+
+	# 	vect_start_clustered = vect_start[value]
+	# 	vect_end_clustered = vect_end[value]
+
+	# 	vect_rand_clustered = (vect_end_clustered - vect_start_clustered)/(SCALE_COEF1*(SCALE_COEF2+1))
+
+	# 	a,b = generate_coef(vect_rand_clustered, vect_end_clustered)
+
+	# 	final_sol,residuals_err = linear_least_squares(a,b,residuals=True)
+
+	# 	rela_err = relative_err_calc(final_sol,trocar[ite])
+
+	# 	abs_err = abs_err_calc(final_sol,trocar[ite])
+
+	# 	eu_err = eudist_err_calc(final_sol,trocar[ite])
 		
-		# covar = np.matrix(np.dot(a.T, a)).I
-		covar = np.linalg.pinv(np.dot(a.T, a))
-		var_mtrx = np.dot(residuals_err,covar)/(a.shape[0]-3+1)
-		diagonal = np.diagonal(var_mtrx)
-		std_err = np.linalg.norm(diagonal)
-		u,s,vh = np.linalg.svd(var_mtrx, full_matrices=True)
-		print("Estimated trocar (mm): ",final_sol)
-		print("{} ground truth (mm): {}".format(key,trocar[ite]))
-		print("Singular values: {} - {} - {}".format(s[0],s[1],s[2]))
-		print("Standard error (mm): ",std_err)
-		# print("Estimated trocar (mm): ",final_sol)
-		# DrawConfidenceRegion(s,final_sol,vh)
-		print("Relative error for X,Y,Z respectively (%): {} - {} - {}".format(rela_err[0],rela_err[1],rela_err[2]))
-		print("Absolute error for X,Y,Z respectively (mm): {} - {} - {}".format(abs_err[0],abs_err[1],abs_err[2]))
-		print("Root mean square error (mm): ",eu_err)
-		DrawConfidenceRegion(s,final_sol,vh,key)	
+	# 	# covar = np.matrix(np.dot(a.T, a)).I
+	# 	covar = np.linalg.pinv(np.dot(a.T, a))
+	# 	var_mtrx = np.dot(residuals_err,covar)/(a.shape[0]-3+1)
+	# 	diagonal = np.diagonal(var_mtrx)
+	# 	std_err = np.linalg.norm(diagonal)
+	# 	u,s,vh = np.linalg.svd(var_mtrx, full_matrices=True)
+	# 	print("Estimated trocar (mm): ",final_sol)
+	# 	print("{} ground truth (mm): {}".format(key,trocar[ite]))
+	# 	print("Singular values: {} - {} - {}".format(s[0],s[1],s[2]))
+	# 	print("Standard error (mm): ",std_err)
+	# 	# print("Estimated trocar (mm): ",final_sol)
+	# 	# DrawConfidenceRegion(s,final_sol,vh)
+	# 	print("Relative error for X,Y,Z respectively (%): {} - {} - {}".format(rela_err[0],rela_err[1],rela_err[2]))
+	# 	print("Absolute error for X,Y,Z respectively (mm): {} - {} - {}".format(abs_err[0],abs_err[1],abs_err[2]))
+	# 	print("Root mean square error (mm): ",eu_err)
+	# 	DrawConfidenceRegion(s,final_sol,vh,key)	
 
-		ite += 1
+	# 	ite += 1
 
 
 	# for i in range(num_trocar):
@@ -2163,17 +2163,17 @@ def ransac_new(trocar,percentage):
 	# 	DrawConfidenceRegion(s,final_sol,vh)
 
 
-	# plydata = PlyData.read("liver_simplified.ply")
-	# vertex_data = plydata['vertex'].data # numpy array with fields ['x', 'y', 'z']
-	# pts = np.zeros([vertex_data.size, 3])
-	# pts[:, 0] = vertex_data['x']
-	# pts[:, 1] = vertex_data['y']
-	# pts[:, 2] = vertex_data['z']
+	plydata = PlyData.read("liver_simplified.ply")
+	vertex_data = plydata['vertex'].data # numpy array with fields ['x', 'y', 'z']
+	pts = np.zeros([vertex_data.size, 3])
+	pts[:, 0] = vertex_data['x']
+	pts[:, 1] = vertex_data['y']
+	pts[:, 2] = vertex_data['z']
 
-	visualize_model(trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_gt,gt=True)
+	visualize_model(trocar=trocar,pts = pts,vect_end=vect_end,vect_start=vect_start,line_idx=dict_gt,gt=True)
 	
-	visualize_model(trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_cluster,gt=False)
-
+	# visualize_model(trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_cluster,gt=False)
+	# visualize_model(pts=pts)
 
 
 
