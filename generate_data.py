@@ -92,13 +92,13 @@ def generate_outliers(N_outliers = 20, trocar = trocar_c,scale1 = 1, scale2 = 1)
 
     return vect_outlier_end, vect_outlier_start, vect_outlier_rand
 
-def add_gaussian_noise(data, mean=0, sigma=0.1, percentage = 0.2):
+def add_gaussian_noise(data1,data2, mean=0, sigma=0.1, percentage = 0.2):
 
     if sigma == 0:
         
-        return data
+        return data1,data2
 
-    num_data = len(data)
+    num_data = len(data1)
 
     num_outlier = int(num_data*percentage)
 
@@ -108,15 +108,16 @@ def add_gaussian_noise(data, mean=0, sigma=0.1, percentage = 0.2):
 
     j = 0
 
-    data_with_noise = data
+    data_with_noise1 = data1
+    data_with_noise2 = data2
 
     for i in random_list:
 
-        data_with_noise[i] = data_with_noise[i] + gaussian[j]
-  
+        data_with_noise1[i] = data_with_noise1[i] + gaussian[j]
+        data_with_noise2[i] = data_with_noise2[i] + gaussian[j]
         j += 1
     
-    return data_with_noise, random_list   
+    return data_with_noise1,data_with_noise2,random_list   
 
 # # Draw 3d graph
 

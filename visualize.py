@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from skimage import measure
 
-def DrawConfidenceRegion(s,center,rotation):
+def DrawConfidenceRegion(s,center,rotation,trocar):
 
 	radii = 1/np.sqrt(s)
 	print(rotation.shape)
@@ -45,9 +45,10 @@ def DrawConfidenceRegion(s,center,rotation):
 	    ax.plot(X3, Y3, Z3, color='b')
 	ax.set(xlabel='x (mm)', ylabel='y (mm)', zlabel='z (mm)')
 	ax.plot_wireframe(x, y, z,  rstride=4, cstride=4, color='b', alpha=0.2)
+	plt.title(trocar + " confidence region")
 	plt.show()
 
-def visualize_model(trocar, pts = None, vect_end = None, vect_start = None, line_idx = None):
+def visualize_model(trocar, pts = None, vect_end = None, vect_start = None, line_idx = None, gt=True):
 
 	# Draw 3d graph
 
@@ -95,7 +96,10 @@ def visualize_model(trocar, pts = None, vect_end = None, vect_start = None, line
 	#draw trocar point
 	for i in range(trocar.shape[0]):
 		ax.scatter(trocar[i,0],trocar[i,1],trocar[i,2],marker = "*",color="b")
-
+	if gt:
+		plt.title("Original Data")
+	else:
+		plt.title("Clustered Data")
 	plt.show()
 		
 def get_cmap(n, name='hsv'):

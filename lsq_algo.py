@@ -14,6 +14,7 @@ from sklearn.metrics import confusion_matrix,ConfusionMatrixDisplay
 from pyntcloud import PyntCloud
 from plyfile import PlyData
 from itertools import product, combinations, cycle
+import time
 LOOP_NUM = 10
 N_lines = 1000
 # percentage = 0.2
@@ -86,7 +87,7 @@ def lineseg_dist(p, a, b, index = 0, list_idx_lines = [], threshold = 0):
 
 def relative_err_calc(pred,gt):
 
-	return np.abs(pred-gt)/gt*100
+	return np.abs((pred-gt)/gt)*100
 
 def abs_err_calc(pred,gt):
 
@@ -1791,6 +1792,8 @@ def ransac_new(trocar,percentage):
 
 	# Generate lines to each trocar
 	
+	# vect_end_temp = np.empty((0,3),dtype=np.float32)	
+	# vect_start_temp = np.empty((0,3),dtype=np.float32)
 	vect_end = np.empty((0,3),dtype=np.float32)	
 	vect_start = np.empty((0,3),dtype=np.float32)	
 	N_lines = 1000
@@ -1819,7 +1822,7 @@ def ransac_new(trocar,percentage):
 	### add Gaussian noise
 	if percentage[-1]:
 
-		vect_end_with_noise, random_list = add_gaussian_noise(vect_end, sigma=20, percentage=percentage[-1])
+		vect_end,vect_start, random_list = add_gaussian_noise(vect_end,vect_start, sigma=10, percentage=percentage[-1])
 	
 		for i in range(len(list_idx_gt)):
 
@@ -1827,6 +1830,7 @@ def ransac_new(trocar,percentage):
 			list_idx_gt[i] = list_idx_gt[i].tolist()
 
 		list_idx_gt.append(random_list.tolist())
+
 
 	for i in range(len(list_idx_gt)):
 
@@ -1896,7 +1900,7 @@ def ransac_new(trocar,percentage):
 	vect_clustered = []
 	threshold_dist = 1
 	threshold_inliers = 20
-
+	start_time = time.time()
 	while(num_trials > sample_count):
 		
 		sample_count += 1
@@ -1967,7 +1971,7 @@ def ransac_new(trocar,percentage):
 	if len(list_idx):
 
 		vect_clustered.append(list_idx.tolist())
-
+	print("--- %s seconds ---" % (time.time() - start_time))
 	if len(vect_clustered) < num_trocar+2:
 
 		for key,value in dict_gt.items():
@@ -2089,7 +2093,7 @@ def ransac_new(trocar,percentage):
 
 	for key,value in dict_cluster.items():
 
-		if ite == num_trocar - 1:
+		if ite == num_trocar:
 
 			break
 
@@ -2126,7 +2130,7 @@ def ransac_new(trocar,percentage):
 		print("Relative error for X,Y,Z respectively (%): {} - {} - {}".format(rela_err[0],rela_err[1],rela_err[2]))
 		print("Absolute error for X,Y,Z respectively (mm): {} - {} - {}".format(abs_err[0],abs_err[1],abs_err[2]))
 		print("Root mean square error (mm): ",eu_err)
-		DrawConfidenceRegion(s,final_sol,vh)	
+		DrawConfidenceRegion(s,final_sol,vh,key)	
 
 		ite += 1
 
@@ -2166,9 +2170,9 @@ def ransac_new(trocar,percentage):
 	# pts[:, 1] = vertex_data['y']
 	# pts[:, 2] = vertex_data['z']
 
-	visualize_model(trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_gt)
+	visualize_model(trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_gt,gt=True)
 	
-	visualize_model(trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_cluster)
+	visualize_model(trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_cluster,gt=False)
 
 
 
@@ -2183,7 +2187,7 @@ if __name__ == '__main__':
 
 	# percentage = np.array([0.35,0.27,0.18,0.2])
 	# run_algo4(trocar,percentage)
-	percentage = np.array([0.4,0.3,0.2,0.1,0.05])
+	percentage = np.array([0.4,0.3,0.2,0.1,0.2])
 	# percentage = np.array([0.35,0.25,0.15,0.1,0.15])
 	# run_algo5(trocar,percentage)
 	
