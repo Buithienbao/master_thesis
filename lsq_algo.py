@@ -1899,94 +1899,107 @@ def ransac_new(trocar,percentage):
 	# list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
 	# # remove_idx = []
 	# vect_clustered = []
-	length_clus = num_trocar + 4
+
+	num_trials = 100000000
+	sample_count = 0
+	sample_size = 2
+	P_min = 0.99
+	temp_per = 0
+
 	list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
-
-	while(length_clus > num_trocar+1):
-
-		num_trials = 100000000
-		sample_count = 0
-		sample_size = 2
-		P_min = 0.99
-		temp_per = 0
-
-		list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
-		# remove_idx = []
-		vect_clustered = []
-		threshold_dist = 1
-		threshold_inliers = 20
-		# start_time = time.time()
-		while(num_trials > sample_count):
-			
-			sample_count += 1
-			
-			list_idx_copy = list_idx.copy()
-			
-			idx1 = random.choice(list_idx)
-			# list_idx = np.delete(list_idx,np.where(list_idx==idx1))
-
-			idx2 = random.choice(list_idx)
-			
-			# while(idx2 == idx1):
-				
-			# 	idx2 = random.choice(list_idx)
-			# list_idx = np.delete(list_idx,np.where(list_idx==idx2))
-
-			estim_pt = find_intersection_3d_lines(vect_end[idx1], vect_start[idx1], vect_end[idx2], vect_start[idx2])
-			
-			min_list_idx_temp = lineseg_dist(estim_pt, vect_start, vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
-
-			num_inliers = len(min_list_idx_temp)
-
-			#update RANSAC params
-			if num_inliers:
-
-				P_outlier = 1 - num_inliers/(N_lines-temp_per)
-				
-				if not P_outlier:
-
-					vect_clustered.append(list_idx.tolist())
-					list_idx = []
-					break
-
-
-				num_trials = int(math.log(1-P_min)/math.log(1-(1-P_outlier)**sample_size))
-
-			if num_inliers > threshold_inliers:
-
-				# remove_idx.append(min_list_idx_temp)
-
-				vect_clustered.append(min_list_idx_temp.tolist())
-				list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
-				flat_list = [item for sublist in vect_clustered for item in sublist]
-				flat_list = np.array(flat_list)
-				# print(sorted(np.unique(flat_list)))
-				list_idx = list_idx[~np.isin(list_idx,flat_list)]
-				
-				if not len(list_idx):
-
-					break
-
-				elif len(list_idx) < 3:
-
-					vect_clustered.append(list_idx.tolist())
-					list_idx = []
-					break
-
-				list_idx = shuffle(list_idx)
-
-				#reset RANSAC params
-				sample_count = 0
-				num_trials = 100000000
-				temp_per += num_inliers
-				# print(num_inliers)		
-		#Store the last cluster (if any)
-		if len(list_idx):
-
-			vect_clustered.append(list_idx.tolist())
+	# remove_idx = []
+	vect_clustered = []
+	threshold_dist = 1
+	threshold_inliers = 20
+	# start_time = time.time()
+	while(num_trials > sample_count):
 		
-		length_clus = len(vect_clustered)
+		sample_count += 1
+		
+		list_idx_copy = list_idx.copy()
+		
+		idx1 = random.choice(list_idx)
+		# list_idx = np.delete(list_idx,np.where(list_idx==idx1))
 
+		idx2 = random.choice(list_idx)
+		
+		# while(idx2 == idx1):
+			
+		# 	idx2 = random.choice(list_idx)
+		# list_idx = np.delete(list_idx,np.where(list_idx==idx2))
+
+		estim_pt = find_intersection_3d_lines(vect_end[idx1], vect_start[idx1], vect_end[idx2], vect_start[idx2])
+		
+		min_list_idx_temp = lineseg_dist(estim_pt, vect_start, vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+
+		num_inliers = len(min_list_idx_temp)
+
+		#update RANSAC params
+		if num_inliers:
+
+			P_outlier = 1 - num_inliers/(N_lines-temp_per)
+			
+			if not P_outlier:
+
+				vect_clustered.append(list_idx.tolist())
+				list_idx = []
+				break
+
+
+			num_trials = int(math.log(1-P_min)/math.log(1-(1-P_outlier)**sample_size))
+
+		if num_inliers > threshold_inliers:
+
+			# remove_idx.append(min_list_idx_temp)
+			center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
+			
+			new_min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+
+			new_num_inliers = len(new_min_list_idx_temp)
+
+			while new_num_inliers > num_inliers:
+
+				num_inliers = new_num_inliers
+				
+				min_list_idx_temp = np.copy(new_min_list_idx_temp)
+
+				center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
+				
+				new_min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+
+				new_num_inliers = len(new_min_list_idx_temp)
+
+
+			vect_clustered.append(min_list_idx_temp.tolist())
+			list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
+			flat_list = [item for sublist in vect_clustered for item in sublist]
+			flat_list = np.array(flat_list)
+			# print(sorted(np.unique(flat_list)))
+			list_idx = list_idx[~np.isin(list_idx,flat_list)]
+			
+			if not len(list_idx):
+
+				break
+
+			elif len(list_idx) < 3:
+
+				vect_clustered.append(list_idx.tolist())
+				list_idx = []
+				break
+
+			list_idx = shuffle(list_idx)
+
+			#reset RANSAC params
+			sample_count = 0
+			num_trials = 100000000
+			temp_per += num_inliers
+			# print(num_inliers)
+
+	#Store the last cluster (if any)
+	if len(list_idx):
+
+		vect_clustered.append(list_idx.tolist())
+	
 
 	# print("--- %s seconds ---" % (time.time() - start_time))
 	if len(vect_clustered) < num_trocar+2:
@@ -2030,7 +2043,6 @@ def ransac_new(trocar,percentage):
 
 		# plot_cfs_matrix(y_true,y_pred,list(dict_gt.keys()))
 
-
 	else:
 		print(len(vect_clustered))
 		print("Wrongly classify")
@@ -2044,18 +2056,20 @@ def ransac_new(trocar,percentage):
 
 			break
 
-		vect_start_clustered = np.zeros((len(value),3),dtype=np.float32)
-		vect_end_clustered = np.zeros((len(value),3),dtype=np.float32)	
+		# vect_start_clustered = np.zeros((len(value),3),dtype=np.float32)
+		# vect_end_clustered = np.zeros((len(value),3),dtype=np.float32)	
 
-		vect_start_clustered = vect_start[value]
-		vect_end_clustered = vect_end[value]
+		# vect_start_clustered = vect_start[value]
+		# vect_end_clustered = vect_end[value]
 
-		vect_rand_clustered = (vect_end_clustered - vect_start_clustered)/(SCALE_COEF1*(SCALE_COEF2+1))
+		# vect_rand_clustered = (vect_end_clustered - vect_start_clustered)/(SCALE_COEF1*(SCALE_COEF2+1))
 
-		a,b = generate_coef(vect_rand_clustered, vect_end_clustered)
+		# a,b = generate_coef(vect_rand_clustered, vect_end_clustered)
 
-		final_sol,residuals_err = linear_least_squares(a,b,residuals=True)
+		# final_sol,residuals_err = linear_least_squares(a,b,residuals=True)
 
+		final_sol, residuals_err, a, b = estimate_trocar(vect_end,vect_start,value)
+		
 		rela_err = relative_err_calc(final_sol,trocar[ite])
 
 		abs_err = abs_err_calc(final_sol,trocar[ite])
@@ -2482,6 +2496,22 @@ def test_case(trocar, percentage):
 		# visualize_model(trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_cluster,gt=False)
 		# visualize_model(pts=pts)
 
+def estimate_trocar(vect_end,vect_start,lines_idx):
+
+
+	vect_start_clustered = np.zeros((len(lines_idx),3),dtype=np.float32)
+	vect_end_clustered = np.zeros((len(lines_idx),3),dtype=np.float32)	
+
+	vect_start_clustered = vect_start[lines_idx]
+	vect_end_clustered = vect_end[lines_idx]
+
+	vect_rand_clustered = (vect_end_clustered - vect_start_clustered)/(SCALE_COEF1*(SCALE_COEF2+1))
+
+	a,b = generate_coef(vect_rand_clustered, vect_end_clustered)
+
+	final_sol,residuals_err = linear_least_squares(a,b,residuals=True)
+ 	
+	return final_sol, residuals_err, a, b
 
 ###################################################################
 
