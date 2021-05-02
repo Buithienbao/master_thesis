@@ -4,16 +4,11 @@ import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D
 import random
 from scipy.linalg.blas import dgemm
-# Trocar coordinates fixed values
 
-trocar_c = [30,68,102]
-trocar_c = np.array(trocar_c).astype(np.float32)
+num_data = 1000
 
-num_data = 100
-
-def get_trocar_gt():
-    
-    return trocar_c
+liver = np.array([0,30,-25])
+std_noise = 5
 
 def create_random_point(x0,y0,z0,distance):
     """
@@ -27,11 +22,86 @@ def create_random_point(x0,y0,z0,distance):
     t = 2 * np.pi * v
     x = w * np.cos(t)
     x1 = x / np.cos(y0)
-    y = w * np.sin(t)
+    y1 = w * np.sin(t)
     
-    return [x0+x1, y0 +y, z0]
+    return [x0+x1, y0 +y1, z0]
 
-def generate_perfect_data(N_lines = num_data, trocar = trocar_c,scale1 = 1, scale2 = 1):
+def generate_data(N_lines, trocar, scale1 = 1, scale2 = 1, sigma = 5):
+
+    """
+    Generate simulation data (data with noise follows Gaussian distribution)
+    """
+
+    # Get normal vector of plane which contains all points will be generated
+    n_vect = trocar-liver
+    unit_vect = n_vect/np.linalg.norm(n_vect) #convert to unit vect
+
+    # Get direction vectors for intersection points
+    u = np.zeros((N_lines,3),dtype=np.float32)    
+
+    u1 = np.array([unit_vect[1], -unit_vect[0], 0]) #an unit vector perpendicular to the normal vect
+    u2 = np.array([unit_vect[2], 0, -unit_vect[0]])
+
+    coef = np.random.normal(0,100,(N_lines,2))
+
+    for i in range(u.shape[0]):
+        u[i] = coef[i,0]*u1 + coef[i,1]*u2
+        u[i] = u[i]/np.linalg.norm(u[i])
+
+    # Noisy data is defined based on the distance from the trocar. d ~ N(0,std_noise)
+    d = np.random.normal(0,sigma,N_lines)
+
+    # Generate points satify list distances d
+    pts = np.zeros((N_lines,3),dtype=np.float32)    
+    
+    for i in range(pts.shape[0]):
+        pts[i] = d[i]*u[i] + trocar
+
+    unit_vect_stack = np.tile(unit_vect,[N_lines,1]).astype(np.float32)
+
+    vect_start = pts - scale1*scale2*unit_vect_stack
+    vect_end = pts + scale1*unit_vect_stack
+
+    return vect_end, vect_start, trocar, unit_vect_stack
+
+def generate_incorrect_data(N_lines, trocar, scale1 = 1, scale2 = 1, sigma = 5, upper_bound = 150):
+
+    """
+    Generate incorrect data (uniform distribution)
+    """
+
+    # Get normal vector of plane which contains all points will be generated
+    n_vect = trocar-liver
+    unit_vect = n_vect/np.linalg.norm(n_vect) #convert to unit vect
+
+    # Get direction vectors for intersection points
+    u = np.zeros((N_lines,3),dtype=np.float32)    
+
+    u1 = np.array([unit_vect[1], -unit_vect[0], 0]) #an unit vector perpendicular to the normal vect
+    u2 = np.array([unit_vect[2], 0, -unit_vect[0]])
+
+    coef = np.random.normal(0,100,(N_lines,2))
+
+    for i in range(u.shape[0]):
+        u[i] = coef[i,0]*u1 + coef[i,1]*u2
+        u[i] = u[i]/np.linalg.norm(u[i])
+    # Incorrect data is defined based on the distance from the trocar. d ~ U(sigma,upperbound - depends on the scene)
+    d = np.random.uniform(1.96*sigma,upper_bound,N_lines)
+
+    # Generate points satify list distances d
+    pts = np.zeros((N_lines,3),dtype=np.float32)    
+    
+    for i in range(pts.shape[0]):
+        pts[i] = d[i]*u[i] + trocar
+
+    unit_vect_stack = np.tile(unit_vect,[N_lines,1]).astype(np.float32)
+
+    vect_start = pts - scale1*scale2*unit_vect_stack
+    vect_end = pts + scale1*unit_vect_stack
+
+    return vect_end, vect_start, trocar, unit_vect_stack
+
+def generate_perfect_data(N_lines, trocar,scale1 = 1, scale2 = 1):
 
     # vect_rand = np.random.randint(100, size=(N_lines,3)).astype(np.float32)
     vect_rand = np.zeros((N_lines,3),dtype=np.float32)
@@ -45,9 +115,9 @@ def generate_perfect_data(N_lines = num_data, trocar = trocar_c,scale1 = 1, scal
     vect_start = vect_trocar - scale1*scale2*vect_rand
     vect_end = vect_trocar + scale1*vect_rand
 
-    return vect_end, vect_start, trocar_c, vect_rand
+    return vect_end, vect_start, trocar, vect_rand
 
-def generate_outliers(N_outliers = 20, trocar = trocar_c,scale1 = 1, scale2 = 1):
+def generate_outliers(N_outliers, trocar,scale1 = 1, scale2 = 1):
     """
     generate outlier data
 

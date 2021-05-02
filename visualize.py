@@ -110,7 +110,7 @@ def visualize_model(trocar, pts = None, vect_end = None, vect_start = None, line
 	else:
 		plt.title("Clustered Data")
 	plt.show()
-		
+
 def get_cmap(n, name='hsv'):
     '''Returns a function that maps each index in 0, 1, ..., n-1 to a distinct 
     RGB color; the keyword argument name must be a standard mpl colormap name.'''
@@ -134,3 +134,4 @@ def plot_cfs_matrix(y_true,y_pred,labels):
 	                      display_labels=labels).plot()	
 	# NOTE: Fill all variables here with default values of the plot_confusion_matrix
 	plt.show()
+
