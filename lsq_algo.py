@@ -360,7 +360,7 @@ def ransac_new(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150):
 	# remove_idx = []
 	vect_clustered = []
 	threshold_dist = 8
-	threshold_inliers = 20
+	threshold_inliers = 30
 	vect_cent = []
 
 	# start_time = time.time()
