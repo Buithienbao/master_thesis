@@ -32,21 +32,26 @@ def generate_data(N_lines, trocar, scale1 = 1, scale2 = 1, sigma = 5):
     Generate simulation data (data with noise follows Gaussian distribution)
     """
 
-    # Get normal vector of plane which contains all points will be generated
-    n_vect = trocar-liver
-    unit_vect = n_vect/np.linalg.norm(n_vect) #convert to unit vect
+    # Generate direction unit vector for all lines
 
+    vect_rand = np.zeros((N_lines,3),dtype=np.float32)
+    
+    for i in range(N_lines):
+
+        vect_rand[i] = random_unit_vector()
+    
     # Get direction vectors for intersection points
     u = np.zeros((N_lines,3),dtype=np.float32)    
 
-    u1 = np.array([unit_vect[1], -unit_vect[0], 0]) #an unit vector perpendicular to the normal vect
-    u2 = np.array([unit_vect[2], 0, -unit_vect[0]])
+    for i in range(N_lines):
+        u[i] = np.array([vect_rand[i,1], -vect_rand[i,0], 0])
 
-    coef = np.random.normal(0,100,(N_lines,2))
 
-    for i in range(u.shape[0]):
-        u[i] = coef[i,0]*u1 + coef[i,1]*u2
-        u[i] = u[i]/np.linalg.norm(u[i])
+    # coef = np.random.normal(0,100,(N_lines,2))
+
+    # for i in range(u.shape[0]):
+    #     u[i] = coef[i,0]*u1 + coef[i,1]*u2
+    #     u[i] = u[i]/np.linalg.norm(u[i])
 
     # Noisy data is defined based on the distance from the trocar. d ~ N(0,std_noise)
     d = np.random.normal(0,sigma,N_lines)
@@ -57,12 +62,12 @@ def generate_data(N_lines, trocar, scale1 = 1, scale2 = 1, sigma = 5):
     for i in range(pts.shape[0]):
         pts[i] = d[i]*u[i] + trocar
 
-    unit_vect_stack = np.tile(unit_vect,[N_lines,1]).astype(np.float32)
+    # unit_vect_stack = np.tile(unit_vect,[N_lines,1]).astype(np.float32)
 
-    vect_start = pts - scale1*scale2*unit_vect_stack
-    vect_end = pts + scale1*unit_vect_stack
+    vect_start = pts - scale1*scale2*vect_rand
+    vect_end = pts + scale1*vect_rand
 
-    return vect_end, vect_start, trocar, unit_vect_stack
+    return vect_end, vect_start, trocar, vect_rand
 
 def generate_incorrect_data(N_lines, trocar, scale1 = 1, scale2 = 1, sigma = 5, upper_bound = 150):
 
@@ -70,21 +75,20 @@ def generate_incorrect_data(N_lines, trocar, scale1 = 1, scale2 = 1, sigma = 5, 
     Generate incorrect data (uniform distribution)
     """
 
-    # Get normal vector of plane which contains all points will be generated
-    n_vect = trocar-liver
-    unit_vect = n_vect/np.linalg.norm(n_vect) #convert to unit vect
+    # Generate direction unit vector for all lines
 
+    vect_rand = np.zeros((N_lines,3),dtype=np.float32)
+    
+    for i in range(N_lines):
+
+        vect_rand[i] = random_unit_vector()
+    
     # Get direction vectors for intersection points
     u = np.zeros((N_lines,3),dtype=np.float32)    
 
-    u1 = np.array([unit_vect[1], -unit_vect[0], 0]) #an unit vector perpendicular to the normal vect
-    u2 = np.array([unit_vect[2], 0, -unit_vect[0]])
+    for i in range(N_lines):
+        u[i] = np.array([vect_rand[i,1], -vect_rand[i,0], 0])
 
-    coef = np.random.normal(0,100,(N_lines,2))
-
-    for i in range(u.shape[0]):
-        u[i] = coef[i,0]*u1 + coef[i,1]*u2
-        u[i] = u[i]/np.linalg.norm(u[i])
     # Incorrect data is defined based on the distance from the trocar. d ~ U(sigma,upperbound - depends on the scene)
     d = np.random.uniform(1.96*sigma,upper_bound,N_lines)
 
@@ -94,12 +98,12 @@ def generate_incorrect_data(N_lines, trocar, scale1 = 1, scale2 = 1, sigma = 5, 
     for i in range(pts.shape[0]):
         pts[i] = d[i]*u[i] + trocar
 
-    unit_vect_stack = np.tile(unit_vect,[N_lines,1]).astype(np.float32)
+    # unit_vect_stack = np.tile(unit_vect,[N_lines,1]).astype(np.float32)
 
-    vect_start = pts - scale1*scale2*unit_vect_stack
-    vect_end = pts + scale1*unit_vect_stack
+    vect_start = pts - scale1*scale2*vect_rand
+    vect_end = pts + scale1*vect_rand
 
-    return vect_end, vect_start, trocar, unit_vect_stack
+    return vect_end, vect_start, trocar, vect_rand
 
 def generate_perfect_data(N_lines, trocar,scale1 = 1, scale2 = 1):
 
