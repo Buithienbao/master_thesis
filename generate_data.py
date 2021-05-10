@@ -32,15 +32,22 @@ def generate_data(N_lines, trocar, scale1 = 1, scale2 = 1, sigma = 5):
     Generate simulation data (data with noise follows Gaussian distribution)
     """
 
-    # Generate direction unit vector for all lines
+    # Generate direction unit vector for all lines passing through trocar
 
-    vect_rand = np.zeros((N_lines,3),dtype=np.float32)
-    
-    for i in range(N_lines):
+    #solution1
+    vect_rand = np.random.normal(0,1,(N_lines,3))
+    norm_rand = np.linalg.norm(vect_rand,axis=1)        
+    #normalize to get unit vector
+    vect_rand = vect_rand/norm_rand[:,np.newaxis]
 
-        vect_rand[i] = random_unit_vector()
+    #solution2    
+    # vect_rand = np.zeros((N_lines,3),dtype=np.float32)
+
+    # for i in range(N_lines):
+
+    #     vect_rand[i] = random_unit_vector()
     
-    # Get direction vectors for intersection points
+    #Get direction vectors to offset the lines
     u = np.zeros((N_lines,3),dtype=np.float32)    
 
     for i in range(N_lines):
@@ -75,15 +82,22 @@ def generate_incorrect_data(N_lines, trocar, scale1 = 1, scale2 = 1, sigma = 5, 
     Generate incorrect data (uniform distribution)
     """
 
-    # Generate direction unit vector for all lines
+    # Generate direction unit vector for all lines passing through trocar
 
-    vect_rand = np.zeros((N_lines,3),dtype=np.float32)
-    
-    for i in range(N_lines):
+    #solution1
+    vect_rand = np.random.normal(0,1,(N_lines,3))
+    norm_rand = np.linalg.norm(vect_rand,axis=1)        
+    #normalize to get unit vector
+    vect_rand = vect_rand/norm_rand[:,np.newaxis]
 
-        vect_rand[i] = random_unit_vector()
+    #solution2    
+    # vect_rand = np.zeros((N_lines,3),dtype=np.float32)
+
+    # for i in range(N_lines):
+
+    #     vect_rand[i] = random_unit_vector()
     
-    # Get direction vectors for intersection points
+    #Get direction vectors to offset the lines
     u = np.zeros((N_lines,3),dtype=np.float32)    
 
     for i in range(N_lines):
