@@ -26,7 +26,7 @@ def create_random_point(x0,y0,z0,distance):
     
     return [x0+x1, y0 +y1, z0]
 
-def generate_data(N_lines, trocar, scale1 = 1, scale2 = 1, sigma = 5):
+def generate_correct_data(N_lines, trocar, scale1 = 1, scale2 = 1, sigma = 5):
 
     """
     Generate simulation data (data with noise follows Gaussian distribution)
@@ -40,7 +40,7 @@ def generate_data(N_lines, trocar, scale1 = 1, scale2 = 1, sigma = 5):
     #normalize to get unit vector
     vect_rand = vect_rand/norm_rand[:,np.newaxis]
 
-    #solution2    
+    # #solution2    
     # vect_rand = np.zeros((N_lines,3),dtype=np.float32)
 
     # for i in range(N_lines):
@@ -90,7 +90,7 @@ def generate_incorrect_data(N_lines, trocar, scale1 = 1, scale2 = 1, sigma = 5, 
     #normalize to get unit vector
     vect_rand = vect_rand/norm_rand[:,np.newaxis]
 
-    #solution2    
+    # #solution2    
     # vect_rand = np.zeros((N_lines,3),dtype=np.float32)
 
     # for i in range(N_lines):
@@ -118,6 +118,77 @@ def generate_incorrect_data(N_lines, trocar, scale1 = 1, scale2 = 1, sigma = 5, 
     vect_end = pts + scale1*vect_rand
 
     return vect_end, vect_start, trocar, vect_rand
+
+
+def generate_data(N_lines, percentage, trocar, scale1, scale2, sigma = 5, upper_bound = 150):
+
+    num_trocar = trocar.shape[0]
+
+
+    # Generate lines to each trocar
+
+    vect_end = np.empty((0,3),dtype=np.float32) 
+    vect_start = np.empty((0,3),dtype=np.float32)   
+    list_idx_gt = []
+    cur = 0
+    last = 0
+    dict_gt = {}
+    dict_cluster = {}
+
+    for i in range(num_trocar):
+
+        end_temp, start_temp,_,_ = generate_correct_data(int(N_lines*percentage[i]*(1-percentage[-1])), trocar[i], scale1 = scale1, scale2 = scale2, sigma = sigma) 
+        vect_end = np.append(vect_end,end_temp,axis=0)
+        vect_start = np.append(vect_start,start_temp,axis=0)
+        cur += int(N_lines*percentage[i]*(1-percentage[-1]))
+        # print("cur: {}, last: {}",cur,last)
+
+        list_temp = np.arange(last, cur)
+
+        # print("List temp: ",list_temp)
+
+        list_idx_gt.append(list_temp)
+        
+        last += int(N_lines*percentage[i]*(1-percentage[-1]))
+
+    ### add Incorrect data
+    if percentage[-1]:
+
+        for i in range(num_trocar):
+
+            outlier_end, outlier_start,_,_ = generate_incorrect_data(int(N_lines*percentage[i]*percentage[-1]), trocar[i], scale1 = scale1, scale2 = scale2,sigma = sigma,upper_bound = upper_bound)
+            vect_end = np.append(vect_end,outlier_end,axis=0)
+            vect_start = np.append(vect_start,outlier_start,axis=0)
+            cur += int(N_lines*percentage[i]*percentage[-1])
+            # print("cur: {}, last: {}",cur,last)
+
+            list_temp = np.arange(last, cur)
+
+            # print("List temp: ",list_temp)
+
+            if i == 0:
+
+                list_idx_gt.append(list_temp.tolist())
+
+            else:
+
+                list_idx_gt[num_trocar].extend(list_temp.tolist())
+
+            last += int(N_lines*percentage[i]*percentage[-1])
+
+
+    for i in range(len(list_idx_gt)):
+
+        if i == num_trocar:
+
+            dict_gt["Incorrect Data"] = list_idx_gt[i]
+        
+        else:
+
+            dict_gt["Trocar "+str(i+1)] = list_idx_gt[i]
+
+    return vect_start, vect_end, dict_gt
+
 
 def generate_perfect_data(N_lines, trocar,scale1 = 1, scale2 = 1):
 
@@ -282,7 +353,7 @@ def generate_coef(unit_vect, point):
     a : np.ndarray of shape (n*3,3)
     b : np.ndarray of shape (n*3,1)
     """
-    I = np.array([[1,0,0],[0,1,0],[0,0,1]])
+    I = np.eye(3,dtype=np.float32)
     num_vect = len(unit_vect)
 
     a = np.zeros((num_vect*3,3),dtype = np.float32)

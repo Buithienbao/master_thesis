@@ -15,6 +15,8 @@ from pyntcloud import PyntCloud
 from plyfile import PlyData
 from itertools import product, combinations, cycle
 import time
+import statsmodels.api as sm
+
 N_lines = 1000
 # percentage = 0.2
 # num_outliers = int(N_lines*percentage)
@@ -80,7 +82,6 @@ def lineseg_dist(p, a, b, index = 0, list_idx_lines = [], threshold = 0):
 
 		temp_dist = np.array(dist.copy())
 		list_idx = np.where(temp_dist < threshold)
-
 		return list_idx_lines[list_idx]
 
 	return np.linalg.norm(dist)
@@ -297,78 +298,13 @@ def test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, use_
 
 
 
-def ransac_new(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, test_num_clus=False):
+def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000, test_num_clus=False):
 
 	num_trocar = trocar.shape[0]
 
-
-	# Generate lines to each trocar
-
-	vect_end = np.empty((0,3),dtype=np.float32)	
-	vect_start = np.empty((0,3),dtype=np.float32)	
-	list_idx_gt = []
-	cur = 0
-	last = 0
-	dict_gt = {}
 	dict_cluster = {}
 
-	for i in range(num_trocar):
-
-		end_temp, start_temp,_,_ = generate_data(int(N_lines*percentage[i]*(1-percentage[-1])), trocar[i], scale1 = SCALE_COEF1, scale2 = SCALE_COEF2) 
-		vect_end = np.append(vect_end,end_temp,axis=0)
-		vect_start = np.append(vect_start,start_temp,axis=0)
-		cur += int(N_lines*percentage[i]*(1-percentage[-1]))
-		# print("cur: {}, last: {}",cur,last)
-
-		list_temp = np.arange(last, cur)
-
-		# print("List temp: ",list_temp)
-
-		list_idx_gt.append(list_temp)
-		
-		last += int(N_lines*percentage[i]*(1-percentage[-1]))
-
-	### add Incorrect data
-	if percentage[-1]:
-
-		for i in range(num_trocar):
-
-			outlier_end, outlier_start,_,_ = generate_incorrect_data(int(N_lines*percentage[i]*percentage[-1]), trocar[i], scale1 = SCALE_COEF1, scale2 = SCALE_COEF2,upper_bound = upper_bound)
-			vect_end = np.append(vect_end,outlier_end,axis=0)
-			vect_start = np.append(vect_start,outlier_start,axis=0)
-			cur += int(N_lines*percentage[i]*percentage[-1])
-			# print("cur: {}, last: {}",cur,last)
-
-			list_temp = np.arange(last, cur)
-
-			# print("List temp: ",list_temp)
-
-			if i == 0:
-
-				list_idx_gt.append(list_temp.tolist())
-
-			else:
-
-				list_idx_gt[num_trocar].extend(list_temp.tolist())
-
-			last += int(N_lines*percentage[i]*percentage[-1])
-
-
-	for i in range(len(list_idx_gt)):
-
-		if i == num_trocar:
-
-			dict_gt["Incorrect Data"] = list_idx_gt[i]
-		
-		else:
-
-			dict_gt["Trocar "+str(i+1)] = list_idx_gt[i]
-			
-	# print(dict_gt)
-
 	list_abs_err = np.zeros((num_trocar,1),dtype=np.float32)
-
-
 
 	num_trials = 100000000
 	sample_count = 0
@@ -379,11 +315,12 @@ def ransac_new(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, tes
 	list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
 	# remove_idx = []
 	vect_clustered = []
-	threshold_dist = 8
-	threshold_inliers = 30
+	threshold_dist = 20
+	threshold_inliers = 50
 	vect_cent = []
 
 	# start_time = time.time()
+	count_cluster = 0
 	while(num_trials > sample_count):
 		
 		sample_count += 1
@@ -405,42 +342,41 @@ def ransac_new(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, tes
 		min_list_idx_temp = lineseg_dist(estim_pt, vect_start, vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
 
 		num_inliers = len(min_list_idx_temp)
+		# print("1st: ",num_inliers)
+
+		if num_inliers < 2:
+
+			continue
+
+		center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
+
+		min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+
+		num_inliers = len(min_list_idx_temp)
+
+		# print("2nd: ",num_inliers)
+
+		if num_inliers < 2:
+
+			continue
 
 		#update RANSAC params
-		if num_inliers:
 
-			P_outlier = 1 - num_inliers/(N_lines-temp_per)
-			
-			if not P_outlier:
+		P_outlier = 1 - num_inliers/(N_lines-temp_per)
+		
+		if not P_outlier:
 
-				vect_clustered.append(list_idx.tolist())
-				list_idx = []
-				break
+			vect_clustered.append(list_idx.tolist())
+			list_idx = []
+			break
 
+		num_trials = int(math.log(1-P_min)/math.log(1-(1-P_outlier)**sample_size))
 
-			num_trials = int(math.log(1-P_min)/math.log(1-(1-P_outlier)**sample_size))
 
 		if num_inliers > threshold_inliers:
 
-			# remove_idx.append(min_list_idx_temp)
-			center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
-			
-			new_min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
-
-			new_num_inliers = len(new_min_list_idx_temp)
-
-			while new_num_inliers > num_inliers:
-
-				num_inliers = new_num_inliers
-				
-				min_list_idx_temp = np.copy(new_min_list_idx_temp)
-
-				center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
-				
-				new_min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
-
-				new_num_inliers = len(new_min_list_idx_temp)
-
+			count_cluster+=1
+			print("Cluster " + str(count_cluster) + " found.")
 			vect_cent.append(center_point_temp)
 			vect_clustered.append(min_list_idx_temp.tolist())
 			list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
@@ -451,10 +387,11 @@ def ransac_new(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, tes
 			
 			if not len(list_idx):
 
+				print("Last cluster. Length: 0")
 				break
 
 			elif len(list_idx) < 3:
-
+				print("Last cluster. Length: ",len(list_idx))
 				vect_clustered.append(list_idx.tolist())
 				list_idx = []
 				break
@@ -464,62 +401,63 @@ def ransac_new(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, tes
 			#reset RANSAC params
 			sample_count = 0
 			num_trials = 100000000
+
 			temp_per += num_inliers
 			# print(num_inliers)
 
 	#Store the last cluster (if any)
 	if len(list_idx):
-
+		print("Last cluster. Length: ",len(list_idx))
 		vect_clustered.append(list_idx.tolist())
 	
 
 	# print("--- %s seconds ---" % (time.time() - start_time))
 	
-	if not test_num_clus:
+	# if not test_num_clus:
 
-		if len(vect_clustered) < num_trocar+2:
+	if len(vect_clustered) == num_trocar+1:
 
-			y_true,y_pred,center_pts = flattenClusteringResult(dict_gt,dict_cluster,vect_clustered,vect_cent,N_lines)
-			# plot_cfs_matrix(y_true,y_pred,list(dict_gt.keys()))
-			acc_clustering = accuracy_score(y_true,y_pred)
-			print(acc_clustering)
-			# print(center_pts)
-		else:
-
-			print(len(vect_clustered))
-			print("Wrongly classify")
-			return
-
-		ite = 0
-
-		for key,value in dict_cluster.items():
-
-			if ite == num_trocar:
-
-				break
-
-			final_sol = center_pts[key]
-
-			abs_err = mean_absolute_error(final_sol,trocar[ite])
-			
-			list_abs_err[ite] = abs_err
-
-			ite += 1
-
-
-		# pts = read_ply("liver_simplified.ply")
-
-
-		# visualize_model(pts=pts,trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_gt,gt=True)
-		
-		# visualize_model(pts=pts,trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_cluster,gt=False)
-		# visualize_model(pts=pts)
-
-		return list_abs_err, acc_clustering, len(vect_clustered)
-
+		y_true,y_pred,center_pts = flattenClusteringResult(dict_gt,dict_cluster,vect_clustered,vect_cent,N_lines)
+		plot_cfs_matrix(y_true,y_pred,list(dict_gt.keys()))
+		acc_clustering = accuracy_score(y_true,y_pred)
+		print(acc_clustering)
+		# print(center_pts)
 	else:
 
-		return acc_clustering,len(vect_clustered)
+		print(len(vect_clustered))
+		print("Wrongly classify")
+		return
+
+	ite = 0
+
+	for key,value in dict_cluster.items():
+
+		if ite == num_trocar:
+
+			break
+
+		final_sol = center_pts[key]
+
+		abs_err = mean_absolute_error(final_sol,trocar[ite])
+		
+		list_abs_err[ite] = abs_err
+
+		ite += 1
+
+
+	pts = read_ply("liver_simplified.ply")
+
+
+	# visualize_model(pts=pts,trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_gt,gt=True)
+	
+	# visualize_model(pts=pts,trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_cluster,gt=False)
+		# visualize_model(pts=pts)
+
+		# return list_abs_err, acc_clustering, len(vect_clustered)
+
+	# else:
+
+		# return acc_clustering,len(vect_clustered)
 
 def flattenClusteringResult(dict_gt,dict_cluster,vect_clustered,vect_cent,N_lines):
 
@@ -588,7 +526,20 @@ def estimate_trocar(vect_end,vect_start,lines_idx):
 	a,b = generate_coef(vect_rand_clustered, vect_end_clustered)
 
 	final_sol,residuals_err = linear_least_squares(a,b,residuals=True)
- 	
+
+	# # use np.linalg.lstsq
+	# final_sol,_,_,_ = np.linalg.lstsq(a,b,rcond=None)
+	# # print(final_sol)
+	# final_sol = np.reshape(final_sol,(1,3))[0]
+	# # print(final_sol)
+	# residuals_err = np.linalg.norm(np.dot(a, final_sol) - b)
+
+	# # use OLS
+	# statsmodel_model = sm.OLS(b, a)
+	# regression_results = statsmodel_model.fit()
+	# final_sol = regression_results.params
+	# residuals_err = regression_results.resid
+	
 	return final_sol, residuals_err, a, b
 
 def read_ply(path):
@@ -616,6 +567,24 @@ if __name__ == '__main__':
 	# run_algo4(trocar,percentage)
 	# run_algo5(trocar,percentage)
 	percentage = np.array([0.4,0.3,0.2,0.1,0.2])
-	test_case(trocar, percentage, N_lines = 1000, sigma=15, upper_bound=150,use_inc=False)
+	# test_case(trocar, percentage, N_lines = 1000, sigma=15, upper_bound=150,use_inc=False)
+	vect_start, vect_end, dict_gt = generate_data(N_lines, percentage, trocar, scale1 = SCALE_COEF1, scale2 = SCALE_COEF2, sigma = 5, upper_bound = 150)
+	
+	# list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
+	
+	# estim_pt = np.array([-58.94028, 73.22261, 118.905426])
+
+	# trocar_pt = np.array([[-60.1072, 70.414635,120.166214]])
+
+	# min_list_idx_temp = lineseg_dist(estim_pt, vect_start, vect_end, list_idx_lines = list_idx, threshold = 8)
+
+	# new_min_list_idx_temp = lineseg_dist(trocar_pt, vect_start, vect_end, list_idx_lines = list_idx, threshold = 8)
+
+	# print(len(min_list_idx_temp))
+
+	# print(len(new_min_list_idx_temp))
+
+
+	ransac_new(trocar = trocar, N_lines = 1000, vect_start = vect_start, vect_end = vect_end, dict_gt = dict_gt, test_num_clus=False)
 	# ransac_new(trocar,percentage)
 	
