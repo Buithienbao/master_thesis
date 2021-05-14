@@ -199,6 +199,8 @@ def test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, use_
 			percentage[-1] = num/100
 		else:
 			sigma = num
+		
+		vect_start, vect_end, dict_gt = generate_data(N_lines=N_lines, percentage = percentage, trocar=trocar, scale1 = SCALE_COEF1, scale2 = SCALE_COEF2, sigma = sigma, upper_bound = upper_bound)
 
 		# abs_err, acc_clustering, num_trocar = ransac_new(trocar,percentage,N_lines,sigma,upper_bound)
 
@@ -210,13 +212,13 @@ def test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, use_
 
 		# 	list_abs_err[ite,i] = abs_err[i]
 
-		acc_clustering,num_trocar = ransac_new(trocar,percentage,N_lines,sigma,upper_bound,test_num_clus=True)
+		# acc_clustering,num_trocar = ransac_new(trocar,percentage,N_lines,sigma,upper_bound,test_num_clus=True)
+		acc_clustering,num_trocar = ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = N_lines, test_num_clus=True)
 
 		list_trocar[ite] = num_trocar
 		list_acc[ite] = acc_clustering*100
 
 		ite += 1
-
 
 	# #plot the result
 	# plt.figure(100),
@@ -315,8 +317,8 @@ def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000, test_num_c
 	list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
 	# remove_idx = []
 	vect_clustered = []
-	threshold_dist = 20
-	threshold_inliers = 50
+	threshold_dist = 15
+	threshold_inliers = 60
 	vect_cent = []
 
 	# start_time = time.time()
@@ -412,52 +414,46 @@ def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000, test_num_c
 	
 
 	# print("--- %s seconds ---" % (time.time() - start_time))
+
+
+	y_true,y_pred,center_pts = flattenClusteringResult(dict_gt,dict_cluster,vect_clustered,vect_cent,N_lines)
+	# plot_cfs_matrix(y_true,y_pred,list(dict_gt.keys()))
+	acc_clustering = accuracy_score(y_true,y_pred)
+	# print(acc_clustering)
+
 	
-	# if not test_num_clus:
+	if not test_num_clus:
 
-	if len(vect_clustered) == num_trocar+1:
+		ite = 0
 
-		y_true,y_pred,center_pts = flattenClusteringResult(dict_gt,dict_cluster,vect_clustered,vect_cent,N_lines)
-		plot_cfs_matrix(y_true,y_pred,list(dict_gt.keys()))
-		acc_clustering = accuracy_score(y_true,y_pred)
-		print(acc_clustering)
-		# print(center_pts)
+		for key,value in dict_cluster.items():
+
+			if ite == num_trocar:
+
+				break
+
+			final_sol = center_pts[key]
+
+			abs_err = mean_absolute_error(final_sol,trocar[ite])
+			
+			list_abs_err[ite] = abs_err
+
+			ite += 1
+
+
+		# pts = read_ply("liver_simplified.ply")
+
+
+		# visualize_model(pts=pts,trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_gt,gt=True)
+		
+		# visualize_model(pts=pts,trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_cluster,gt=False)
+			# visualize_model(pts=pts)
+
+		return list_abs_err, acc_clustering, len(vect_clustered)
+
 	else:
 
-		print(len(vect_clustered))
-		print("Wrongly classify")
-		return
-
-	ite = 0
-
-	for key,value in dict_cluster.items():
-
-		if ite == num_trocar:
-
-			break
-
-		final_sol = center_pts[key]
-
-		abs_err = mean_absolute_error(final_sol,trocar[ite])
-		
-		list_abs_err[ite] = abs_err
-
-		ite += 1
-
-
-	pts = read_ply("liver_simplified.ply")
-
-
-	# visualize_model(pts=pts,trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_gt,gt=True)
-	
-	# visualize_model(pts=pts,trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_cluster,gt=False)
-		# visualize_model(pts=pts)
-
-		# return list_abs_err, acc_clustering, len(vect_clustered)
-
-	# else:
-
-		# return acc_clustering,len(vect_clustered)
+		return acc_clustering,len(vect_clustered)
 
 def flattenClusteringResult(dict_gt,dict_cluster,vect_clustered,vect_cent,N_lines):
 
@@ -568,7 +564,7 @@ if __name__ == '__main__':
 	# run_algo5(trocar,percentage)
 	percentage = np.array([0.4,0.3,0.2,0.1,0.2])
 	# test_case(trocar, percentage, N_lines = 1000, sigma=15, upper_bound=150,use_inc=False)
-	vect_start, vect_end, dict_gt = generate_data(N_lines, percentage, trocar, scale1 = SCALE_COEF1, scale2 = SCALE_COEF2, sigma = 5, upper_bound = 150)
+	# vect_start, vect_end, dict_gt = generate_data(N_lines, percentage, trocar, scale1 = SCALE_COEF1, scale2 = SCALE_COEF2, sigma = 5, upper_bound = 150)
 	
 	# list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
 	
@@ -585,6 +581,7 @@ if __name__ == '__main__':
 	# print(len(new_min_list_idx_temp))
 
 
-	ransac_new(trocar = trocar, N_lines = 1000, vect_start = vect_start, vect_end = vect_end, dict_gt = dict_gt, test_num_clus=False)
+	# ransac_new(trocar = trocar, N_lines = 1000, vect_start = vect_start, vect_end = vect_end, dict_gt = dict_gt, test_num_clus=False)
 	# ransac_new(trocar,percentage)
 	
+	test_case(trocar, percentage, N_lines = 1000, sigma=10, upper_bound=150, use_inc=False)
