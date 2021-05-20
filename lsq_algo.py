@@ -188,7 +188,8 @@ def test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, use_
 		list_noise_percentage = np.arange(start_range+step, end_range + step,step,dtype=np.uint8)
 	
 	list_abs_err = np.zeros((len(list_noise_percentage),num_trocar),dtype=np.float32)
-	list_acc = np.zeros((len(list_noise_percentage),1),dtype=np.float32)
+	list_acc = np.zeros((len(list_noise_percentage),num_trocar),dtype=np.float32)
+	# list_acc = np.zeros((len(list_noise_percentage),1),dtype=np.float32)
 	list_trocar = np.zeros((len(list_noise_percentage),1),dtype=np.uint8)
 
 	ite = 0
@@ -202,58 +203,87 @@ def test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, use_
 		
 		vect_start, vect_end, dict_gt = generate_data(N_lines=N_lines, percentage = percentage, trocar=trocar, scale1 = SCALE_COEF1, scale2 = SCALE_COEF2, sigma = sigma, upper_bound = upper_bound)
 
-		# abs_err, acc_clustering, num_trocar = ransac_new(trocar,percentage,N_lines,sigma,upper_bound)
+		abs_err, acc_clustering, num_trocar = ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = N_lines)
 
-		# list_acc[ite] = acc_clustering*100
+		# for i in range(len(acc_clustering)):
 
-		# list_trocar[ite] = num_trocar
+		# 	list_acc[ite,i] = acc_clustering[i]*100
 
-		# for i in range(len(abs_err)):
+		list_acc[ite] = acc_clustering*100
+		list_trocar[ite] = num_trocar
 
-		# 	list_abs_err[ite,i] = abs_err[i]
+		for i in range(len(abs_err)):
+
+			list_abs_err[ite,i] = abs_err[i]
 
 		# acc_clustering,num_trocar = ransac_new(trocar,percentage,N_lines,sigma,upper_bound,test_num_clus=True)
-		acc_clustering,num_trocar = ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = N_lines, test_num_clus=True)
+		# acc_clustering,num_trocar = ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = N_lines, test_num_clus=True)
 
-		list_trocar[ite] = num_trocar
-		list_acc[ite] = acc_clustering*100
+		# list_trocar[ite] = num_trocar
+		# list_acc[ite] = acc_clustering*100
 
 		ite += 1
 
 	# #plot the result
-	# plt.figure(100),
-	# fig, axs = plt.subplots(2, 2, figsize = (10, 4))
-	# fig.suptitle('Relative error comparison')
-	# axs[0,0].plot(list_noise_percentage, list_rela_err[:,0,0], 'r-')
-	# axs[0,0].plot(list_noise_percentage, list_rela_err[:,1,0], 'b-')
-	# axs[0,0].plot(list_noise_percentage, list_rela_err[:,2,0], 'g-')
-	# axs[0,0].plot(list_noise_percentage, list_rela_err[:,3,0], 'm-')
-	# axs[0,0].legend(['Trocar 1','Trocar 2','Trocar 3','Trocar 4'])
-	# axs[0,0].set(xlabel='Incorrect data (%)', ylabel='Relative error for X (%)')
-	# # axs[0,0].set_title('Trocar 1')
-	# axs[0,1].plot(list_noise_percentage, list_rela_err[:,0,1], 'r-')
-	# axs[0,1].plot(list_noise_percentage, list_rela_err[:,1,1], 'b-')
-	# axs[0,1].plot(list_noise_percentage, list_rela_err[:,2,1], 'g-')
-	# axs[0,1].plot(list_noise_percentage, list_rela_err[:,3,1], 'm-')
-	# axs[0,1].legend(['Trocar 1','Trocar 2','Trocar 3','Trocar 4'])
-	# axs[0,1].set(xlabel='Incorrect data (%)', ylabel='Relative error for Y (%)')
 
-	# axs[1,0].plot(list_noise_percentage, list_rela_err[:,0,2], 'r-')
-	# axs[1,0].plot(list_noise_percentage, list_rela_err[:,1,2], 'b-')
-	# axs[1,0].plot(list_noise_percentage, list_rela_err[:,2,2], 'g-')
-	# axs[1,0].plot(list_noise_percentage, list_rela_err[:,3,2], 'm-')
-	# axs[1,0].legend(['Trocar 1','Trocar 2','Trocar 3','Trocar 4'])
-	# axs[1,0].set(xlabel='Incorrect data (%)', ylabel='Relative error for Z (%)')
+	if not use_inc:
 
-	plt.figure(100),
-	fig, axs = plt.subplots(1, 1, figsize = (10, 4))
-	axs.plot(list_noise_percentage, list_acc, 'r-')
-	axs.set(xlabel='Amount of noise (mm)', ylabel='Clustering accuracy (%)')
+		plt.figure(100),
+		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
+		axs.plot(list_noise_percentage, list_acc, 'r-')
+		axs.set(xlabel='Amount of noise (mm)', ylabel='Clustering accuracy (%)')
 
-	plt.figure(200),
-	fig, axs = plt.subplots(1, 1, figsize = (10, 4))
-	axs.plot(list_noise_percentage, list_trocar, 'g-')
-	axs.set(xlabel='Amount of noise (mm)', ylabel='Number of cluster predicted')
+		# fig, axs = plt.subplots(1, 1, figsize = (10, 4))
+		# axs.plot(list_noise_percentage, list_acc[:,0], 'r-')
+		# axs.plot(list_noise_percentage, list_acc[:,1], 'b-')
+		# axs.plot(list_noise_percentage, list_acc[:,2], 'g-')
+		# axs.plot(list_noise_percentage, list_acc[:,3], 'm-')
+		# axs.legend(['Trocar 1','Trocar 2','Trocar 3','Trocar 4'])
+		# axs.set(xlabel='Amount of noise (mm)', ylabel='Clustering accuracy (%)')
+
+
+		plt.figure(200),
+		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
+		axs.plot(list_noise_percentage, list_trocar, 'g-')
+		axs.set(xlabel='Amount of noise (mm)', ylabel='Number of cluster predicted')
+
+		plt.figure(300),
+		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
+		axs.plot(list_noise_percentage, list_abs_err[:,0], 'r-')
+		axs.plot(list_noise_percentage, list_abs_err[:,1], 'b-')
+		axs.plot(list_noise_percentage, list_abs_err[:,2], 'g-')
+		axs.plot(list_noise_percentage, list_abs_err[:,3], 'm-')
+		axs.legend(['Trocar 1','Trocar 2','Trocar 3','Trocar 4'])
+		axs.set(xlabel='Amount of noise (mm)', ylabel='Trocar position error (mm)')
+
+	else:
+
+		plt.figure(100),
+		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
+		axs.plot(list_noise_percentage, list_acc, 'r-')
+		axs.set(xlabel='Incorrect data (%)', ylabel='Clustering accuracy (%)')
+
+		# fig, axs = plt.subplots(1, 1, figsize = (10, 4))
+		# axs.plot(list_noise_percentage, list_acc[:,0], 'r-')
+		# axs.plot(list_noise_percentage, list_acc[:,1], 'b-')
+		# axs.plot(list_noise_percentage, list_acc[:,2], 'g-')
+		# axs.plot(list_noise_percentage, list_acc[:,3], 'm-')
+		# axs.legend(['Trocar 1','Trocar 2','Trocar 3','Trocar 4'])
+		# axs.set(xlabel='Incorrect data (%)', ylabel='Clustering accuracy (%)')
+
+		plt.figure(200),
+		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
+		axs.plot(list_noise_percentage, list_trocar, 'g-')
+		axs.set(xlabel='Incorrect data (%)', ylabel='Number of cluster predicted')
+
+		plt.figure(300),
+		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
+		axs.plot(list_noise_percentage, list_abs_err[:,0], 'r-')
+		axs.plot(list_noise_percentage, list_abs_err[:,1], 'b-')
+		axs.plot(list_noise_percentage, list_abs_err[:,2], 'g-')
+		axs.plot(list_noise_percentage, list_abs_err[:,3], 'm-')
+		axs.legend(['Trocar 1','Trocar 2','Trocar 3','Trocar 4'])
+		axs.set(xlabel='Incorrect data (%)', ylabel='Trocar position error (mm)')
 
 	# if use_inc:
 	# 	plt.figure(300),
@@ -300,13 +330,14 @@ def test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, use_
 
 
 
-def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000, test_num_clus=False):
+def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000):
 
 	num_trocar = trocar.shape[0]
 
 	dict_cluster = {}
 
 	list_abs_err = np.zeros((num_trocar,1),dtype=np.float32)
+	list_acc = np.zeros((num_trocar,1),dtype=np.float32)
 
 	num_trials = 100000000
 	sample_count = 0
@@ -317,8 +348,8 @@ def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000, test_num_c
 	list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
 	# remove_idx = []
 	vect_clustered = []
-	threshold_dist = 15
-	threshold_inliers = 60
+	threshold_dist = 8
+	threshold_inliers = 30
 	vect_cent = []
 
 	# start_time = time.time()
@@ -416,77 +447,146 @@ def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000, test_num_c
 	# print("--- %s seconds ---" % (time.time() - start_time))
 
 
-	y_true,y_pred,center_pts = flattenClusteringResult(dict_gt,dict_cluster,vect_clustered,vect_cent,N_lines)
+	y_true,y_pred,center_pts,dict_abs_err = flattenClusteringResult(dict_gt,dict_cluster,vect_clustered,vect_cent,trocar,N_lines)
 	# plot_cfs_matrix(y_true,y_pred,list(dict_gt.keys()))
+	# acc_clustering = confusion_matrix(y_true,y_pred,list(dict_gt.keys()), normalize="true").diagonal()
 	acc_clustering = accuracy_score(y_true,y_pred)
 	# print(acc_clustering)
 
 	
-	if not test_num_clus:
+	# if not test_num_clus:
 
-		ite = 0
+	ite = 0
 
-		for key,value in dict_cluster.items():
+	for key,value in dict_abs_err.items():
 
-			if ite == num_trocar:
+		if ite == num_trocar:
 
-				break
+			break
 
-			final_sol = center_pts[key]
+		# final_sol = center_pts[key]
 
-			abs_err = mean_absolute_error(final_sol,trocar[ite])
-			
-			list_abs_err[ite] = abs_err
-
-			ite += 1
-
-
-		# pts = read_ply("liver_simplified.ply")
-
-
-		# visualize_model(pts=pts,trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_gt,gt=True)
+		# abs_err = mean_absolute_error(final_sol,trocar[ite])
 		
-		# visualize_model(pts=pts,trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_cluster,gt=False)
-			# visualize_model(pts=pts)
+		list_abs_err[ite] = dict_abs_err[key]
 
-		return list_abs_err, acc_clustering, len(vect_clustered)
+		ite += 1
 
-	else:
+	# for i in range(acc_clustering.shape[0]):
 
-		return acc_clustering,len(vect_clustered)
+	# 	if i == num_trocar:
 
-def flattenClusteringResult(dict_gt,dict_cluster,vect_clustered,vect_cent,N_lines):
+	# 		break
+
+	# 	list_acc[i] = acc_clustering[i]
+
+
+
+	# pts = read_ply("liver_simplified.ply")
+
+
+	# visualize_model(pts=pts,trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_gt,gt=True)
+	
+	# visualize_model(trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_cluster,gt=False)
+		# visualize_model(pts=pts)
+
+	return list_abs_err, acc_clustering, len(vect_clustered)
+
+	# else:
+
+		# return acc_clustering,len(vect_clustered)
+
+def flattenClusteringResult(dict_gt,dict_cluster,vect_clustered,vect_cent,trocar,N_lines):
 
 	"""
 	Convert from dictionary to 1D numpy array
 	"""
 	dict_cent = {}
+	dict_abs_err = {}
+
+	trocar_index = 0
+	
+	diff = 10000000
+	diff1 = 10000000
+
+	list_match_idx = []
+
 	for key,value in dict_gt.items():
 
-		gt_temp = set(value)
-		match_max = 0
+		match_max = 10000000000
 		match_index = 0
+		
 
-		for i in range(len(vect_clustered)):
 
-			vect_temp = set(vect_clustered[i])
+		if diff1 == 0 and diff > 0:
 
-			match = len(gt_temp & vect_temp)
+			temp = []
 
-			if match > match_max:
+			for i in range(len(vect_clustered)):
 
-				match_max = match
-				match_index = i
+				if i in list_match_idx:
 
-		dict_cluster[key]  = vect_clustered[match_index]
+					continue
 
-		if match_index >= len(vect_cent):
+				temp.append(vect_clustered[i])
+
+			flat_list = [item for sublist in temp for item in sublist]
+
+			dict_cluster[key]  = flat_list
 			
-			dict_cent[key] = 0
+			dict_cent[key] = np.array([0,0,0])
+
+			break
+
+		elif diff == 0:
+
+			dict_cent[key] = np.array([0,0,0])
+			
+			abs_err = -1
+			
+			# if trocar_index > trocar.shape[0] - 1:
+
+			# 	abs_err = 0
+
+			# else:
+				
+			# 	abs_err = mean_absolute_error(dict_cent[key],trocar[trocar_index])
+			
+			dict_abs_err[key] = abs_err
+
+			trocar_index += 1
+
+			continue
 
 		else:
 
+			for i in range(len(vect_cent)):
+
+				if i in list_match_idx:
+
+					continue
+
+				cent_temp = np.array(vect_cent[i])
+
+				abs_err = mean_absolute_error(cent_temp,trocar[trocar_index])
+
+				if abs_err < match_max:
+
+					match_max = abs_err
+					match_index = i
+
+			dict_cluster[key]  = vect_clustered[match_index]
+			
 			dict_cent[key] = vect_cent[match_index]
+
+			dict_abs_err[key] = abs_err
+
+			list_match_idx.append(match_index)
+
+		trocar_index += 1
+
+		diff = len(vect_cent) - trocar_index
+		diff1 = trocar.shape[0] - trocar_index
 
 	y_true = np.arange(N_lines)
 	y_true = y_true.tolist()
@@ -506,7 +606,7 @@ def flattenClusteringResult(dict_gt,dict_cluster,vect_clustered,vect_cent,N_line
 
 			y_pred[val] = key
 
-	return y_pred,y_true,dict_cent
+	return y_pred,y_true,dict_cent,dict_abs_err
 
 def estimate_trocar(vect_end,vect_start,lines_idx):
 
