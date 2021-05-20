@@ -177,16 +177,19 @@ def EvaluateLsqSolution(covariance_mtrx, pts_estimated):
 	Evaluate the estimation result using linearized statistics
 	'''
 
-def test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, use_inc=False):
+def test_case(trocar, percentage, choice,N_lines = 1000, sigma=5, upper_bound=150):
 
+	lst = ['incorrect_data','noise','observed lines']
 
 	num_trocar = trocar.shape[0]
 
-	if use_inc:
+	if choice == lst[0]:
 		list_noise_percentage = np.arange(start_range, end_range + step,step,dtype=np.uint8)
+	elif choice == lst[1]:
+		list_noise_percentage = np.arange(start_range+step, end_range + step,step,dtype=np.uint8)
 	else:
 		list_noise_percentage = np.arange(start_range+step, end_range + step,step,dtype=np.uint8)
-	
+		list_noise_percentage = [element * 20 for element in list_noise_percentage]
 	list_abs_err = np.zeros((len(list_noise_percentage),num_trocar),dtype=np.float32)
 	list_acc = np.zeros((len(list_noise_percentage),num_trocar),dtype=np.float32)
 	# list_acc = np.zeros((len(list_noise_percentage),1),dtype=np.float32)
@@ -196,11 +199,12 @@ def test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, use_
 
 	for num in list_noise_percentage:
 
-		if use_inc:
+		if choice == lst[0]:
 			percentage[-1] = num/100
-		else:
+		elif choice ==lst[1]:
 			sigma = num
-		
+		else:
+			N_lines = num
 		vect_start, vect_end, dict_gt = generate_data(N_lines=N_lines, percentage = percentage, trocar=trocar, scale1 = SCALE_COEF1, scale2 = SCALE_COEF2, sigma = sigma, upper_bound = upper_bound)
 
 		abs_err, acc_clustering, num_trocar = ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = N_lines)
@@ -226,7 +230,7 @@ def test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, use_
 
 	# #plot the result
 
-	if not use_inc:
+	if choice == lst[1]:
 
 		plt.figure(100),
 		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
@@ -245,7 +249,7 @@ def test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, use_
 		plt.figure(200),
 		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
 		axs.plot(list_noise_percentage, list_trocar, 'g-')
-		axs.set(xlabel='Amount of noise (mm)', ylabel='Number of cluster predicted')
+		axs.set(xlabel='Amount of noise (mm)', ylabel='Number of trocar predicted')
 
 		plt.figure(300),
 		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
@@ -256,7 +260,7 @@ def test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, use_
 		axs.legend(['Trocar 1','Trocar 2','Trocar 3','Trocar 4'])
 		axs.set(xlabel='Amount of noise (mm)', ylabel='Trocar position error (mm)')
 
-	else:
+	elif choice == lst[0]:
 
 		plt.figure(100),
 		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
@@ -274,7 +278,7 @@ def test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, use_
 		plt.figure(200),
 		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
 		axs.plot(list_noise_percentage, list_trocar, 'g-')
-		axs.set(xlabel='Incorrect data (%)', ylabel='Number of cluster predicted')
+		axs.set(xlabel='Incorrect data (%)', ylabel='Number of trocar predicted')
 
 		plt.figure(300),
 		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
@@ -285,6 +289,33 @@ def test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, use_
 		axs.legend(['Trocar 1','Trocar 2','Trocar 3','Trocar 4'])
 		axs.set(xlabel='Incorrect data (%)', ylabel='Trocar position error (mm)')
 
+	else:
+		plt.figure(100),
+		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
+		axs.plot(list_noise_percentage, list_acc, 'r-')
+		axs.set(xlabel='Number of observed tool 3D axes', ylabel='Clustering accuracy (%)')
+
+		# fig, axs = plt.subplots(1, 1, figsize = (10, 4))
+		# axs.plot(list_noise_percentage, list_acc[:,0], 'r-')
+		# axs.plot(list_noise_percentage, list_acc[:,1], 'b-')
+		# axs.plot(list_noise_percentage, list_acc[:,2], 'g-')
+		# axs.plot(list_noise_percentage, list_acc[:,3], 'm-')
+		# axs.legend(['Trocar 1','Trocar 2','Trocar 3','Trocar 4'])
+		# axs.set(xlabel='Incorrect data (%)', ylabel='Clustering accuracy (%)')
+
+		plt.figure(200),
+		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
+		axs.plot(list_noise_percentage, list_trocar, 'g-')
+		axs.set(xlabel='Number of observed tool 3D axes', ylabel='Number of trocar predicted')
+
+		plt.figure(300),
+		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
+		axs.plot(list_noise_percentage, list_abs_err[:,0], 'r-')
+		axs.plot(list_noise_percentage, list_abs_err[:,1], 'b-')
+		axs.plot(list_noise_percentage, list_abs_err[:,2], 'g-')
+		axs.plot(list_noise_percentage, list_abs_err[:,3], 'm-')
+		axs.legend(['Trocar 1','Trocar 2','Trocar 3','Trocar 4'])
+		axs.set(xlabel='Number of observed tool 3D axes', ylabel='Trocar position error (mm)')
 	# if use_inc:
 	# 	plt.figure(300),
 	# 	fig, axs = plt.subplots(1, 1, figsize = (10, 4))
@@ -349,7 +380,7 @@ def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000):
 	# remove_idx = []
 	vect_clustered = []
 	threshold_dist = 8
-	threshold_inliers = 20
+	threshold_inliers = 30
 	vect_cent = []
 
 	# start_time = time.time()
@@ -381,17 +412,17 @@ def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000):
 
 			continue
 
-		# center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
+		center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
 
-		# min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+		min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
 
-		# num_inliers = len(min_list_idx_temp)
+		num_inliers = len(min_list_idx_temp)
 
-		# # print("2nd: ",num_inliers)
+		# print("2nd: ",num_inliers)
 
-		# if num_inliers < 2:
+		if num_inliers < 2:
 
-		# 	continue
+			continue
 
 		#update RANSAC params
 
@@ -408,27 +439,27 @@ def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000):
 
 		if num_inliers > threshold_inliers:
 
-			# remove_idx.append(min_list_idx_temp)
-			center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
+			# # remove_idx.append(min_list_idx_temp)
+			# center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
 
-			new_min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+			# new_min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
 
-			new_num_inliers = len(new_min_list_idx_temp)
+			# new_num_inliers = len(new_min_list_idx_temp)
 
-			while new_num_inliers > num_inliers:
+			# while new_num_inliers > num_inliers:
 
-				num_inliers = new_num_inliers
+			# 	num_inliers = new_num_inliers
 
-				min_list_idx_temp = np.copy(new_min_list_idx_temp)
+			# 	min_list_idx_temp = np.copy(new_min_list_idx_temp)
 
-				center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
+			# 	center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
 
-				new_min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+			# 	new_min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
 
-				new_num_inliers = len(new_min_list_idx_temp)
+			# 	new_num_inliers = len(new_min_list_idx_temp)
 
 			count_cluster+=1
-			print("Cluster " + str(count_cluster) + " found.")
+			print("Trocar " + str(count_cluster) + " found.")
 			vect_cent.append(center_point_temp)
 			vect_clustered.append(min_list_idx_temp.tolist())
 			list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
@@ -438,7 +469,6 @@ def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000):
 			list_idx = list_idx[~np.isin(list_idx,flat_list)]
 			
 			if not len(list_idx):
-
 				print("Last cluster. Length: 0")
 				break
 
@@ -507,7 +537,7 @@ def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000):
 	# visualize_model(trocar=trocar,vect_end=vect_end,vect_start=vect_start,line_idx=dict_cluster,gt=False)
 		# visualize_model(pts=pts)
 
-	return list_abs_err, acc_clustering, len(vect_clustered)
+	return list_abs_err, acc_clustering, len(vect_cent)
 
 	# else:
 
@@ -679,7 +709,7 @@ if __name__ == '__main__':
 	# percentage = np.array([0.35,0.27,0.18,0.2])
 	# run_algo4(trocar,percentage)
 	# run_algo5(trocar,percentage)
-	percentage = np.array([0.4,0.3,0.2,0.1,0.2])
+	percentage = np.array([0.4,0.3,0.2,0.1,0.1])
 	# test_case(trocar, percentage, N_lines = 1000, sigma=15, upper_bound=150,use_inc=False)
 	# vect_start, vect_end, dict_gt = generate_data(N_lines, percentage, trocar, scale1 = SCALE_COEF1, scale2 = SCALE_COEF2, sigma = 5, upper_bound = 150)
 	
@@ -700,5 +730,5 @@ if __name__ == '__main__':
 
 	# ransac_new(trocar = trocar, N_lines = 1000, vect_start = vect_start, vect_end = vect_end, dict_gt = dict_gt, test_num_clus=False)
 	# ransac_new(trocar,percentage)
-	
-	test_case(trocar, percentage, N_lines = 1000, sigma=10, upper_bound=150, use_inc=False)
+	choice = ['incorrect_data','noise','observed lines']
+	test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[2])
