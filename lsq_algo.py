@@ -349,7 +349,7 @@ def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000):
 	# remove_idx = []
 	vect_clustered = []
 	threshold_dist = 8
-	threshold_inliers = 30
+	threshold_inliers = 20
 	vect_cent = []
 
 	# start_time = time.time()
@@ -381,17 +381,17 @@ def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000):
 
 			continue
 
-		center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
+		# center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
 
-		min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+		# min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
 
-		num_inliers = len(min_list_idx_temp)
+		# num_inliers = len(min_list_idx_temp)
 
-		# print("2nd: ",num_inliers)
+		# # print("2nd: ",num_inliers)
 
-		if num_inliers < 2:
+		# if num_inliers < 2:
 
-			continue
+		# 	continue
 
 		#update RANSAC params
 
@@ -407,6 +407,25 @@ def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000):
 
 
 		if num_inliers > threshold_inliers:
+
+			# remove_idx.append(min_list_idx_temp)
+			center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
+
+			new_min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+
+			new_num_inliers = len(new_min_list_idx_temp)
+
+			while new_num_inliers > num_inliers:
+
+				num_inliers = new_num_inliers
+
+				min_list_idx_temp = np.copy(new_min_list_idx_temp)
+
+				center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
+
+				new_min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+
+				new_num_inliers = len(new_min_list_idx_temp)
 
 			count_cluster+=1
 			print("Cluster " + str(count_cluster) + " found.")
@@ -445,14 +464,12 @@ def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000):
 	
 
 	# print("--- %s seconds ---" % (time.time() - start_time))
-
-
+	print(vect_cent)
 	y_true,y_pred,center_pts,dict_abs_err = flattenClusteringResult(dict_gt,dict_cluster,vect_clustered,vect_cent,trocar,N_lines)
 	# plot_cfs_matrix(y_true,y_pred,list(dict_gt.keys()))
 	# acc_clustering = confusion_matrix(y_true,y_pred,list(dict_gt.keys()), normalize="true").diagonal()
 	acc_clustering = accuracy_score(y_true,y_pred)
-	# print(acc_clustering)
-
+	print(center_pts)
 	
 	# if not test_num_clus:
 
@@ -574,12 +591,12 @@ def flattenClusteringResult(dict_gt,dict_cluster,vect_clustered,vect_cent,trocar
 
 					match_max = abs_err
 					match_index = i
-
+						
 			dict_cluster[key]  = vect_clustered[match_index]
 			
 			dict_cent[key] = vect_cent[match_index]
 
-			dict_abs_err[key] = abs_err
+			dict_abs_err[key] = match_max
 
 			list_match_idx.append(match_index)
 
