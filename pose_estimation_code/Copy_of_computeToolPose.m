@@ -68,7 +68,7 @@ model.radiusA = 2.5;
 model.radiusB = 2.4;
 model.lengthCylinderA = 10;
 model.lengthCylinderB = 10;
-model.tipLength = 23.9;
+model.tipLength = 35;
 % The mean of radiusA and radiusB is used as the best approximation 
 % of the tool radius in the pose initialisation
 model.radius = (model.radiusA+model.radiusB)/2;
@@ -127,7 +127,7 @@ for iFrameToProcess = indicesToProcess
 %         I_Line2(subImage.position(2):(subImage.position(2)+subImage.position(4)),subImage.position(1):(subImage.position(1)+subImage.position(3)),:) = I_Line2_sub;
 %     end
 
-    I = imread([DATA_PATH_IMAGE '/' sprintf([ imagePrefix '.png' ],iFrameToProcess)]);
+    I = imread([DATA_PATH_IMAGE '/results/' sprintf([ imagePrefix '.png' ],iFrameToProcess)]);
     I_bothline = imread([DATA_PATH_IMAGE '/results/' sprintf([ imagePrefix '_edgeLine.png'], iFrameToProcess) ]);
     I_midline = imread([DATA_PATH_IMAGE '/results/' sprintf([ imagePrefix '_midline.png'], iFrameToProcess) ]);
     I_tippoint = imread([DATA_PATH_IMAGE '/results/' sprintf([ imagePrefix '_tipPoint_Approximated.png'], iFrameToProcess) ]);
@@ -148,7 +148,7 @@ for iFrameToProcess = indicesToProcess
     flags.displayPose = 1;
     flags.displayPoseInit = 1;
     flags.displayImages = 0;
-    flags.doSave = 0;
+    flags.doSave = 1;
 
     tic
 
@@ -433,7 +433,8 @@ for iFrameToProcess = indicesToProcess
         end
 
         poseResNew = poseRes;
-
+        disp('poseResNew')
+        disp(poseResNew)
     end
 
     refinePoseToSave{iFrameToProcess} = poseRes;
