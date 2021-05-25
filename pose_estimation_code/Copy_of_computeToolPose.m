@@ -4,7 +4,7 @@ useCroppedImages = true;
 
 %% Set the directory path of the files to estimate the pose.
 % @TBM
-DATA_PATH_IMAGE = [ '/home/bao/Downloads/trocar_estimation_adrien/finat' ];
+DATA_PATH_IMAGE = [ '/home/bao/Downloads/trocar_estimation_adrien/mercuri' ];
 
 doNonLinRefinement = 1;
 
@@ -16,7 +16,7 @@ doNonLinRefinement = 1;
 % if strcmp(tool,'toolC')
 %     indicesToProcess = [ 1 3 4 6 16 19 24 26 28 33 36 40 41 42 48 ];
 % end
-indicesToProcess = [ 66 88 90 101 121 ];
+indicesToProcess = [ 43 44 49 52 61 ];
 
 errorRadius = [ 1 ]; % modify this line if you want to simulate noise on the the radius measure, e.g. [1.0,1.05,1.1]
 
@@ -79,7 +79,7 @@ params.nSample = 20; % nb sample points along the cylindrical parts
                      % used in the pose refinement
 
 % For result storage                   
-imagePrefix = '%04d';
+imagePrefix = '%02d';
 
 % % Load the sub images coordinates
 % % @TBM
@@ -92,7 +92,7 @@ imagePrefix = '%04d';
 
 % Loop over all the image in a folder
 for iFrameToProcess = indicesToProcess
-
+    disp("____________________")
 %     Iref = uint8(zeros(1080,1920,1));
 %     subImage = subImages(iFrameToProcess);
 
@@ -127,15 +127,15 @@ for iFrameToProcess = indicesToProcess
 %         I_Line2(subImage.position(2):(subImage.position(2)+subImage.position(4)),subImage.position(1):(subImage.position(1)+subImage.position(3)),:) = I_Line2_sub;
 %     end
 
-    I = imread([DATA_PATH_IMAGE '/results/' sprintf([ imagePrefix '.png' ],iFrameToProcess)]);
-    I_bothline = imread([DATA_PATH_IMAGE '/results/' sprintf([ imagePrefix '_edgeLine.png'], iFrameToProcess) ]);
-    I_midline = imread([DATA_PATH_IMAGE '/results/' sprintf([ imagePrefix '_midline.png'], iFrameToProcess) ]);
-    I_tippoint = imread([DATA_PATH_IMAGE '/results/' sprintf([ imagePrefix '_tipPoint_Approximated.png'], iFrameToProcess) ]);
-    I_Line1 = imread([DATA_PATH_IMAGE '/results/' sprintf([ imagePrefix '_edgeLine_Line_1.png'], iFrameToProcess) ]);
-    I_Line2 = imread([DATA_PATH_IMAGE '/results/' sprintf([ imagePrefix '_edgeLine_Line_2.png'], iFrameToProcess) ]);
+    I = imread([DATA_PATH_IMAGE '/undistorted/' 'image' sprintf([ imagePrefix '.png' ],iFrameToProcess)]);
+    I_bothline = imread([DATA_PATH_IMAGE '/results/' 'image' sprintf([ imagePrefix '_edgeLine.png'], iFrameToProcess) ]);
+    I_midline = imread([DATA_PATH_IMAGE '/results/' 'image' sprintf([ imagePrefix '_midline.png'], iFrameToProcess) ]);
+    I_tippoint = imread([DATA_PATH_IMAGE '/results/' 'image' sprintf([ imagePrefix '_tipPoint_Approximated.png'], iFrameToProcess) ]);
+    I_Line1 = imread([DATA_PATH_IMAGE '/results/' 'image' sprintf([ imagePrefix '_edgeLine_Line_1.png'], iFrameToProcess) ]);
+    I_Line2 = imread([DATA_PATH_IMAGE '/results/' 'image' sprintf([ imagePrefix '_edgeLine_Line_2.png'], iFrameToProcess) ]);
     % Calibration matrix
-    K = [ 1962.76,       0,  1045.78
-        0, 1956.92,  478.55
+    K = [ 952.06,       0,  884.47
+        0, 952.06,  553.68
         0,       0,    1.00];
 
     pose = [ eye(3) zeros(3,1) ];
@@ -441,7 +441,7 @@ for iFrameToProcess = indicesToProcess
 
     % @TBM
     if flags.doSave
-        save(['/home/bao/Downloads/trocar_estimation_adrien/finat/results/Radius.mat'],'refinePoseToSave');
+        save(['/home/bao/Downloads/trocar_estimation_adrien/mercuri/results/Radius.mat'],'refinePoseToSave');
     end
 end
 %     end
