@@ -147,7 +147,7 @@ def generate_data(N_lines, percentage, trocar, scale1, scale2, sigma = 5, upper_
 
         # print("List temp: ",list_temp)
 
-        list_idx_gt.append(list_temp)
+        list_idx_gt.append(list_temp.tolist())
         
         last += int(N_lines*percentage[i]*(1-percentage[-1]))
 
@@ -180,7 +180,7 @@ def generate_data(N_lines, percentage, trocar, scale1, scale2, sigma = 5, upper_
     for i in range(len(list_idx_gt)):
 
         if i == num_trocar:
-
+                
             dict_gt["Incorrect Data"] = list_idx_gt[i]
         
         else:
