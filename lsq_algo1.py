@@ -19,7 +19,7 @@ import statsmodels.api as sm
 import pickle
 import os 
 import glob
-
+import sys
 N_lines = 1000
 # percentage = 0.2
 # num_outliers = int(N_lines*percentage)
@@ -697,14 +697,25 @@ def flattenClusteringResult(dict_gt,dict_cluster,vect_clustered,vect_cent,trocar
 
 					match_max = abs_err
 					match_index = i
-						
-			dict_cluster[key]  = vect_clustered[match_index]
 			
-			dict_cent[key] = vect_cent[match_index]
+			try:
 
-			dict_abs_err[key] = match_max
+				dict_cluster[key]  = vect_clustered[match_index]
+			
+				dict_cent[key] = vect_cent[match_index]
+			
+				dict_abs_err[key] = match_max
 
-			list_match_idx.append(match_index)
+				list_match_idx.append(match_index)
+
+			except IndexError:
+
+				print(len(vect_cent))
+				print(match_index)
+				print(list_match_idx)
+				print(diff1)
+				print(diff)
+				sys.exit(0)
 
 		trocar_index += 1
 
@@ -868,6 +879,7 @@ if __name__ == '__main__':
 
 	for i in range(10000):
 		print(i)
-		test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[0])
+		test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[1])
+		test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[2])
 	# save_dataset(trocar,percentage,choice[1])
 	# load_dataset()
