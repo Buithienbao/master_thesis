@@ -229,8 +229,8 @@ def test_case(trocar, percentage, choice,N_lines = 1000, sigma=5, upper_bound=15
 		else:
 			N_lines = num
 		# vect_start, vect_end, dict_gt = generate_data(N_lines=N_lines, percentage = percentage, trocar=trocar, scale1 = SCALE_COEF1, scale2 = SCALE_COEF2, sigma = sigma, upper_bound = upper_bound)
-		# print(lst_data[ite])
-		# print(lst_gt[ite])
+		print(lst_data[ite])
+		print(lst_gt[ite])
 		vect_start,vect_end,dict_gt = load_dataset(lst_data[ite],lst_gt[ite])
 
 		# print(dict_gt)
@@ -446,128 +446,136 @@ def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000):
 	list_abs_err = np.zeros((num_trocar,1),dtype=np.float32)
 	list_acc = np.zeros((num_trocar,1),dtype=np.float32)
 
-	num_trials = 100000000
-	sample_count = 0
-	sample_size = 2
-	P_min = 0.99
-	temp_per = 0
+	bool_continue = False
 
-	list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
-	# remove_idx = []
-	vect_clustered = []
-	threshold_dist = 8
-	threshold_inliers = 30
-	vect_cent = []
+	while bool_continue == False:
 
-	# start_time = time.time()
-	count_cluster = 0
-	while(num_trials > sample_count):
-		
-		sample_count += 1
-		
-		list_idx_copy = list_idx.copy()
-		
-		idx1 = random.choice(list_idx)
-		# list_idx = np.delete(list_idx,np.where(list_idx==idx1))
+		num_trials = 100000000
+		sample_count = 0
+		sample_size = 2
+		P_min = 0.99
+		temp_per = 0
 
-		idx2 = random.choice(list_idx)
-		
-		# while(idx2 == idx1):
+		list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
+		# remove_idx = []
+		vect_clustered = []
+		threshold_dist = 8
+		threshold_inliers = 30
+		vect_cent = []
+		flat_list = []
+		# start_time = time.time()
+		count_cluster = 0
+
+		while(num_trials > sample_count):
 			
-		# 	idx2 = random.choice(list_idx)
-		# list_idx = np.delete(list_idx,np.where(list_idx==idx2))
-
-		estim_pt = find_intersection_3d_lines(vect_end[idx1], vect_start[idx1], vect_end[idx2], vect_start[idx2])
-		
-		min_list_idx_temp = lineseg_dist(estim_pt, vect_start, vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
-
-		num_inliers = len(min_list_idx_temp)
-		# print("1st: ",num_inliers)
-
-		if num_inliers < 2:
-
-			continue
-
-		center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
-
-		min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
-
-		num_inliers = len(min_list_idx_temp)
-
-		# print("2nd: ",num_inliers)
-
-		if num_inliers < 2:
-
-			continue
-
-		#update RANSAC params
-
-		P_outlier = 1 - num_inliers/(N_lines-temp_per)
-		
-		if not P_outlier:
-
-			vect_clustered.append(list_idx.tolist())
-			list_idx = []
-			break
-
-		num_trials = int(math.log(1-P_min)/math.log(1-(1-P_outlier)**sample_size))
-
-
-		if num_inliers > threshold_inliers:
-
-			# # remove_idx.append(min_list_idx_temp)
-			# center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
-
-			# new_min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
-
-			# new_num_inliers = len(new_min_list_idx_temp)
-
-			# while new_num_inliers > num_inliers:
-
-			# 	num_inliers = new_num_inliers
-
-			# 	min_list_idx_temp = np.copy(new_min_list_idx_temp)
-
-			# 	center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
-
-			# 	new_min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
-
-			# 	new_num_inliers = len(new_min_list_idx_temp)
-
-			count_cluster+=1
-			# print("Trocar " + str(count_cluster) + " found.")
-			vect_cent.append(center_point_temp)
-			vect_clustered.append(min_list_idx_temp.tolist())
-			list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
-			flat_list = [item for sublist in vect_clustered for item in sublist]
-			flat_list = np.array(flat_list)
-			# print(sorted(np.unique(flat_list)))
-			list_idx = list_idx[~np.isin(list_idx,flat_list)]
+			sample_count += 1
 			
-			if not len(list_idx):
-				# print("Last cluster. Length: 0")
-				break
+			list_idx_copy = list_idx.copy()
+			
+			idx1 = random.choice(list_idx)
+			# list_idx = np.delete(list_idx,np.where(list_idx==idx1))
 
-			elif len(list_idx) < 3:
-				# print("Last cluster. Length: ",len(list_idx))
+			idx2 = random.choice(list_idx)
+			
+			# while(idx2 == idx1):
+				
+			# 	idx2 = random.choice(list_idx)
+			# list_idx = np.delete(list_idx,np.where(list_idx==idx2))
+
+			estim_pt = find_intersection_3d_lines(vect_end[idx1], vect_start[idx1], vect_end[idx2], vect_start[idx2])
+			
+			min_list_idx_temp = lineseg_dist(estim_pt, vect_start, vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+
+			num_inliers = len(min_list_idx_temp)
+			# print("1st: ",num_inliers)
+
+			if num_inliers < 2:
+
+				continue
+
+			center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
+
+			min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+
+			num_inliers = len(min_list_idx_temp)
+
+			# print("2nd: ",num_inliers)
+
+			if num_inliers < 2:
+
+				continue
+
+			#update RANSAC params
+
+			P_outlier = 1 - num_inliers/(N_lines-temp_per)
+			
+			if not P_outlier:
+
 				vect_clustered.append(list_idx.tolist())
 				list_idx = []
 				break
 
-			list_idx = shuffle(list_idx)
+			num_trials = int(math.log(1-P_min)/math.log(1-(1-P_outlier)**sample_size))
 
-			#reset RANSAC params
-			sample_count = 0
-			num_trials = 100000000
 
-			temp_per += num_inliers
-			# print(num_inliers)
+			if num_inliers > threshold_inliers:
 
-	#Store the last cluster (if any)
-	if len(list_idx):
-		# print("Last cluster. Length: ",len(list_idx))
-		vect_clustered.append(list_idx.tolist())
+				# # remove_idx.append(min_list_idx_temp)
+				# center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
+
+				# new_min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+
+				# new_num_inliers = len(new_min_list_idx_temp)
+
+				# while new_num_inliers > num_inliers:
+
+				# 	num_inliers = new_num_inliers
+
+				# 	min_list_idx_temp = np.copy(new_min_list_idx_temp)
+
+				# 	center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
+
+				# 	new_min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+
+				# 	new_num_inliers = len(new_min_list_idx_temp)
+
+				count_cluster+=1
+				# print("Trocar " + str(count_cluster) + " found.")
+				vect_cent.append(center_point_temp)
+				vect_clustered.append(min_list_idx_temp.tolist())
+				list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
+				flat_list = [item for sublist in vect_clustered for item in sublist]
+				flat_list = np.array(flat_list)
+				# print(sorted(np.unique(flat_list)))
+				list_idx = list_idx[~np.isin(list_idx,flat_list)]
+				
+				if not len(list_idx):
+					# print("Last cluster. Length: 0")
+					break
+
+				elif len(list_idx) < 3:
+					# print("Last cluster. Length: ",len(list_idx))
+					vect_clustered.append(list_idx.tolist())
+					list_idx = []
+					break
+
+				list_idx = shuffle(list_idx)
+
+				#reset RANSAC params
+				sample_count = 0
+				num_trials = 100000000
+
+				temp_per += num_inliers
+				# print(num_inliers)
+
+		#Store the last cluster (if any)
+		if len(list_idx):
+			# print("Last cluster. Length: ",len(list_idx))
+			vect_clustered.append(list_idx.tolist())
 	
+		if len(vect_cent):
+			
+			bool_continue = True
 
 	# print("--- %s seconds ---" % (time.time() - start_time))
 	# print(vect_cent)
@@ -877,8 +885,7 @@ if __name__ == '__main__':
 	# ransac_new(trocar,percentage)
 	choice = ['incorrect_data','noise','observed lines']
 
-	for i in range(10000):
-		print(i)
+	for i in range(100):
 		test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[1])
 		test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[2])
 	# save_dataset(trocar,percentage,choice[1])

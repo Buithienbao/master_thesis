@@ -4,6 +4,7 @@ import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D
 import random
 from scipy.linalg.blas import dgemm
+from scipy.io import loadmat
 
 num_data = 1000
 
@@ -371,3 +372,24 @@ def generate_coef(unit_vect, point):
 
     return a,b
 
+def dataFromMercuri(filepath, scale1 = 1, scale2 = 1):
+
+    """
+    Load data from mat file
+    """
+    data = loadmat(filepath)['refinePoseToSave']
+
+    num_lines = data.shape[1]
+
+    pts = np.zeros((num_lines,3),dtype=np.float32)    
+    u = np.zeros((num_lines,3),dtype=np.float32)    
+
+    for i in range(num_lines):
+
+        #Load direction vector
+        u[i] = np.array(data[0,i][:,2].reshape(1,3),dtype=np.float32)    
+
+        #Load points and append to array
+        pts[i] = np.array(data[0,i][:,3].reshape(1,3),dtype=np.float32)    
+
+    return u, pts
