@@ -19,6 +19,7 @@ import statsmodels.api as sm
 import pickle
 import os 
 import glob
+from scipy.io import loadmat
 
 N_lines = 1000
 # percentage = 0.2
@@ -831,6 +832,51 @@ def load_dataset(file_name,gt_name):
 
 	return vect_start,vect_end,dict_gt
 
+
+def runMercuri():
+
+	file_path = '/home/bao/Documents/Git/master_thesis/Radius.mat'
+	result_path = '/home/bao/Documents/Git/master_thesis/result/mercuri'
+	file_name = 'result.npz'
+
+	lst_res = glob.glob(result_path + '/' + "*.npz")
+	lst_res.sort()
+	
+	arr = np.empty((0,3), dtype=np.float32)
+
+	u, pts = dataFromMercuri(file_path)
+
+	data_len = int(u.shape[0]/5)
+
+	for i in range(data_len):
+
+		a,b = generate_coef(u[5*i:5*i+5,:], pts[5*i:5*i+5,:])
+
+		final_sol = linear_least_squares(a,b,residuals=False)
+
+		final_sol = final_sol.reshape((1,3))
+
+		arr = np.append(arr,final_sol,axis=0)
+
+	if lst_res:
+
+		data = np.load(lst_res[0])
+
+		mercuri = data['mercuri']
+
+		mercuri = np.append(mercuri, arr, axis=0)
+
+		np.savez(lst_res[0], mercuri=mercuri)
+
+	else:
+
+		np.savez(os.path.join(result_path,file_name), mercuri=arr)
+
+	return
+
+
+
+
 ###################################################################
 
 if __name__ == '__main__':
@@ -864,10 +910,15 @@ if __name__ == '__main__':
 
 	# ransac_new(trocar = trocar, N_lines = 1000, vect_start = vect_start, vect_end = vect_end, dict_gt = dict_gt, test_num_clus=False)
 	# ransac_new(trocar,percentage)
-	choice = ['incorrect_data','noise','observed lines']
+	# choice = ['incorrect_data','noise','observed lines']
 
-	for i in range(10000):
-		print(i)
-		test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[0])
+	# for i in range(10000):
+	# 	print(i)
+	# 	test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[0])
+
+
 	# save_dataset(trocar,percentage,choice[1])
 	# load_dataset()
+
+	runMercuri()
+	

@@ -885,7 +885,8 @@ if __name__ == '__main__':
 	# ransac_new(trocar,percentage)
 	choice = ['incorrect_data','noise','observed lines']
 
-	for i in range(100):
+	for i in range(400):
+		test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[0])
 		test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[1])
 		test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[2])
 	# save_dataset(trocar,percentage,choice[1])
