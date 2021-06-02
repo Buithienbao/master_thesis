@@ -20,6 +20,9 @@ import pickle
 import os 
 import glob
 import sys
+import threading
+
+
 N_lines = 1000
 # percentage = 0.2
 # num_outliers = int(N_lines*percentage)
@@ -143,37 +146,49 @@ def linear_least_squares(a, b, residuals=False):
 
 def find_intersection_3d_lines(p1,p2,p3,p4):
 
-    """
+	"""
 	Find intersection 3d lines
 
-    Parameters
-    ----------
-    p1,p2,p3,p4 : numpy.ndarray
-        coordinate of 3D points (p1 p2 lies on line 1, p3 p4 lies on line 2), an array of size (3,)
+	Parameters
+	----------
+	p1,p2,p3,p4 : numpy.ndarray
+		coordinate of 3D points (p1 p2 lies on line 1, p3 p4 lies on line 2), an array of size (3,)
 
-    Returns
-    -------
-    p_intsec : numpy.ndarray
-    	coordinate of 3D intersection point, an array of size (3,)
+	Returns
+	-------
+	p_intsec : numpy.ndarray
+		coordinate of 3D intersection point, an array of size (3,)
 
-    """
+	"""
+	a1 = np.dot(p1-p3,p4-p3)*np.dot(p4-p3,p2-p1) - np.dot(p1-p3,p2-p1)*np.dot(p4-p3,p4-p3)
+	b1 = np.dot(p2-p1,p2-p1)*np.dot(p4-p3,p4-p3) - np.dot(p4-p3,p2-p1)*np.dot(p4-p3,p2-p1)
 
-    coef1 = (np.dot(p1-p3,p4-p3)*np.dot(p4-p3,p2-p1) - np.dot(p1-p3,p2-p1)*np.dot(p4-p3,p4-p3))/(np.dot(p2-p1,p2-p1)*np.dot(p4-p3,p4-p3) - np.dot(p4-p3,p2-p1)*np.dot(p4-p3,p2-p1))
-    coef2 = (np.dot(p1-p3,p4-p3) + coef1*np.dot(p4-p3,p2-p1))/np.dot(p4-p3,p4-p3)
+	if b1:
+		coef1 = a1/b1    	
+	else:
+		return np.array([])
 
-    pt1 = p1 + coef1*(p2-p1)
-    pt2 = p3 + coef2*(p4-p3)
+	a2 = np.dot(p1-p3,p4-p3) + coef1*np.dot(p4-p3,p2-p1)
+	b2 = np.dot(p4-p3,p4-p3)
 
-    diff = np.linalg.norm(pt1 - pt2)
-    
-    if diff < 0.001:
+	if b2:
+		coef2 = a2/b2
+	else:
+		return np.array([])
 
-    	return pt1
+	pt1 = p1 + coef1*(p2-p1)
+	pt2 = p3 + coef2*(p4-p3)
 
-    else:
+	diff = np.linalg.norm(pt1 - pt2)
 
-    	return (pt1+pt2)/2
-	
+	if diff < 0.001:
+
+		return pt1
+
+	else:
+
+		return (pt1+pt2)/2
+
 
 def EvaluateLsqSolution(covariance_mtrx, pts_estimated):
 	'''
@@ -484,6 +499,10 @@ def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000):
 
 			estim_pt = find_intersection_3d_lines(vect_end[idx1], vect_start[idx1], vect_end[idx2], vect_start[idx2])
 			
+			if not estim_pt.any():
+
+				continue
+
 			min_list_idx_temp = lineseg_dist(estim_pt, vect_start, vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
 
 			num_inliers = len(min_list_idx_temp)
@@ -850,6 +869,13 @@ def load_dataset(file_name,gt_name):
 
 	return vect_start,vect_end,dict_gt
 
+def multi_test(trocar, percentage, N_lines, sigma, upper_bound, choice):
+
+	for i in range(400):
+		test_case(trocar=trocar, percentage=percentage, N_lines = N_lines, sigma=sigma, upper_bound=upper_bound, choice=choice)
+
+
+
 ###################################################################
 
 if __name__ == '__main__':
@@ -885,9 +911,13 @@ if __name__ == '__main__':
 	# ransac_new(trocar,percentage)
 	choice = ['incorrect_data','noise','observed lines']
 
-	for i in range(400):
-		test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[0])
-		test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[1])
-		test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[2])
+	# for i in range(400):
+	# 	test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[0])
+	# 	test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[1])
+	# 	test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[2])
 	# save_dataset(trocar,percentage,choice[1])
 	# load_dataset()
+
+	threading.Thread(target=multi_test,args=(trocar, percentage, 1000, 5, 150, choice[0])).start()
+	threading.Thread(target=multi_test,args=(trocar, percentage, 1000, 5, 150, choice[1])).start()
+	threading.Thread(target=multi_test,args=(trocar, percentage, 1000, 5, 150, choice[2])).start()
