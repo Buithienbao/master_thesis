@@ -834,31 +834,45 @@ def runMercuri():
 
 	data_len = int(u.shape[0]/5)
 
-	for i in range(data_len):
+	# for i in range(data_len):
 
-		a,b = generate_coef(u[5*i:5*i+5,:], pts[5*i:5*i+5,:])
+	# a,b = generate_coef(u[5*i:5*i+5,:], pts[5*i:5*i+5,:])
+	a,b = generate_coef(u[0:5,:], pts[0:5,:])
 
-		final_sol = linear_least_squares(a,b,residuals=False)
+	final_sol = linear_least_squares(a,b,residuals=False)
 
-		final_sol = final_sol.reshape((1,3))
+	final_sol = final_sol.reshape((1,3))
 
-		arr = np.append(arr,final_sol,axis=0)
+	arr = np.append(arr,final_sol,axis=0)
 
-	if lst_res:
+	print(final_sol)
 
-		data = np.load(lst_res[0])
+	vect_start = pts - SCALE_COEF1*SCALE_COEF2*u
+	vect_end = pts + SCALE_COEF1*SCALE_COEF2*u
+	line_idx = {}
+	line_idx["Trocar"] = [0,1,2,3,4]
+	resid = lineseg_dist(final_sol[0],vect_start,vect_end)
+	print(resid)	
+	pts = read_ply("liver_views12345_ct0_wrp0_arap0_alterscheme3.ply")
+	M = np.diag((1,-1,-1))
+	pts = np.matmul(pts,M)
+	visualize_model(pts= pts,vect_end = vect_end, vect_start = vect_start, line_idx = line_idx)
 
-		mercuri = data['mercuri']
+	# if lst_res:	
 
-		mercuri = np.append(mercuri, arr, axis=0)
+	# 	data = np.load(lst_res[0])
 
-		np.savez(lst_res[0], mercuri=mercuri)
+	# 	mercuri = data['mercuri']
 
-	else:
+	# 	mercuri = np.append(mercuri, arr, axis=0)
 
-		np.savez(os.path.join(result_path,file_name), mercuri=arr)
+	# 	np.savez(lst_res[0], mercuri=mercuri)
 
-	return
+	# else:
+
+	# 	np.savez(os.path.join(result_path,file_name), mercuri=arr)
+
+	# return
 
 
 
@@ -866,19 +880,22 @@ def draw_graph(choice,trocar):
 
 	lst = ['incorrect_data','noise','observed lines']
 
-	data_path = '/home/bao/Downloads/Git/master_thesis/data'
+	data_path = '/home/bao/Documents/Git/master_thesis/data'
 
-	list_noise_percentage = np.arange(start_range+step, end_range + step,step,dtype=np.uint8)
 
 	if choice == lst[0]:
+		list_noise_percentage = np.arange(start_range, end_range + step,step,dtype=np.uint8)
 
 		pref_err = 'inc_err'
 
 	elif choice == lst[1]:
+		list_noise_percentage = np.arange(start_range, end_range + step,step,dtype=np.uint8)
 
 		pref_err = 'sigma_err'
 
 	else:
+		list_noise_percentage = np.arange(start_range+step, end_range + step,step,dtype=np.uint8)
+
 		list_noise_percentage = [element * 20 for element in list_noise_percentage]
 
 		pref_err = 'lines_err'
@@ -910,7 +927,9 @@ def draw_graph(choice,trocar):
 	acc = data['acc']
 	nt = data['num_trocar']
 
-	length = int(trocar1.shape[0]/10)
+
+	length = int(trocar1.shape[0]/len(list_noise_percentage))
+
 
 	for num in list_noise_percentage:
 		
@@ -921,14 +940,14 @@ def draw_graph(choice,trocar):
 
 		for j in range(length):
 
-			temp1 = np.append(temp1,trocar1[ite + 10*j])
-			temp2 = np.append(temp2,trocar2[ite + 10*j])
-			temp3 = np.append(temp3,trocar3[ite + 10*j])
-			temp4 = np.append(temp4,trocar4[ite + 10*j])
+			temp1 = np.append(temp1,trocar1[ite + len(list_noise_percentage)*j])
+			temp2 = np.append(temp2,trocar2[ite + len(list_noise_percentage)*j])
+			temp3 = np.append(temp3,trocar3[ite + len(list_noise_percentage)*j])
+			temp4 = np.append(temp4,trocar4[ite + len(list_noise_percentage)*j])
 
-			list_acc[ite] += acc[ite + 10*j]
-			list_trocar[ite] += nt[ite + 10*j]
-			list_mean[ite] += mean_err[ite+10*j]
+			list_acc[ite] += acc[ite + len(list_noise_percentage)*j]
+			list_trocar[ite] += nt[ite + len(list_noise_percentage)*j]
+			list_mean[ite] += mean_err[ite+len(list_noise_percentage)*j]
 
 		list_abs_err[ite,0] = np.nanmean(temp1)
 		list_abs_err[ite,1] = np.nanmean(temp2)
@@ -1062,6 +1081,100 @@ def draw_graph(choice,trocar):
 		axs.set(xlabel='Number of observed tool 3D axes', ylabel='Trocar position error (mm)')
 		
 	plt.show()	
+
+
+def test_case1(trocar, percentage,N_lines = 1000, sigma=5, upper_bound=150):
+
+	# lst = ['incorrect_data','noise','observed lines']
+	data_path = '/home/bao/Documents/Git/master_thesis/'
+	num_trocar = trocar.shape[0]
+
+	# if choice == lst[0]:
+	# list_noise_percentage = np.arange(start_range, end_range + step,step,dtype=np.uint8)
+	pref = 'data/sigma'
+	pref_err = 'navid'
+	# elif choice == lst[1]:
+	# 	list_noise_percentage = np.arange(start_range, end_range + step,step,dtype=np.uint8)
+	# 	pref = 'sigma'
+	# 	pref_err = 'sigma_err'
+
+	# else:
+	# 	list_noise_percentage = np.arange(start_range+step, end_range + step,step,dtype=np.uint8)
+	# 	list_noise_percentage = [element * 20 for element in list_noise_percentage]
+	# 	pref = 'lines'
+	# 	pref_err = 'lines_err'
+
+	path = os.path.join(data_path,pref)
+
+	lst_data = path + '/' + "sigma_00050.npz"
+
+	lst_gt = path + '/' + "sigma_00050.pkl"
+
+	path_err = os.path.join(data_path,pref_err)
+
+	lst_err = glob.glob(data_path + '/' + "*.npz")
+	lst_err.sort()
+
+	list_abs_err = np.zeros((1,num_trocar),dtype=np.float32)
+	# list_acc = np.zeros((len(list_noise_percentage),num_trocar),dtype=np.float32)
+	# list_acc = np.zeros((1,1),dtype=np.float32)
+	# list_trocar = np.zeros((1,1),dtype=np.uint8)
+
+
+	# vect_start, vect_end, dict_gt = generate_data(N_lines=N_lines, percentage = percentage, trocar=trocar, scale1 = SCALE_COEF1, scale2 = SCALE_COEF2, sigma = sigma, upper_bound = upper_bound)
+	# print(lst_data[ite])
+	# print(lst_gt[ite])
+	vect_start,vect_end,dict_gt = load_dataset(lst_data,lst_gt)
+
+	# print(dict_gt)
+	abs_err, acc_clustering, pred_trocar = ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = N_lines)
+
+	# for i in range(len(acc_clustering)):
+
+	# 	list_acc[ite,i] = acc_clustering[i]*100
+
+	list_acc = acc_clustering*100
+	list_trocar = pred_trocar
+
+	for i in range(num_trocar):
+
+		list_abs_err[0,i] = abs_err[i]
+
+	# acc_clustering,num_trocar = ransac_new(trocar,percentage,N_lines,sigma,upper_bound,test_num_clus=True)
+	# acc_clustering,num_trocar = ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = N_lines, test_num_clus=True)
+
+	# list_trocar[ite] = num_trocar
+	# list_acc[ite] = acc_clustering*100
+
+
+	list_pos = np.copy(list_abs_err)
+	list_pos[list_pos < 0 ] = np.nan
+	
+	if lst_err:
+		
+		data = np.load(lst_err[0])
+		trocar1 = data['trocar1']
+		trocar2 = data['trocar2']
+		trocar3 = data['trocar3']
+		trocar4 = data['trocar4']
+		mean_err = data['mean_err']
+		acc = data['acc']
+		nt = data['num_trocar']
+		trocar1	= np.append(trocar1,list_abs_err[0,0])
+		trocar2	= np.append(trocar2,list_abs_err[0,1])
+		trocar3	= np.append(trocar3,list_abs_err[0,2])
+		trocar4	= np.append(trocar4,list_abs_err[0,3])
+		mean_err = np.append(mean_err,np.nanmean(list_pos,axis=1))
+		acc	= np.append(acc,list_acc)
+		nt	= np.append(nt,list_trocar)
+
+		np.savez(path_err+'.npz', trocar1=trocar1, trocar2=trocar2, trocar3=trocar3, trocar4=trocar4, mean_err=mean_err, acc=acc,num_trocar=nt)
+
+	else:
+
+		np.savez(path_err+'.npz', trocar1=list_abs_err[0,0], trocar2=list_abs_err[0,1], trocar3=list_abs_err[0,2], trocar4=list_abs_err[0,3], mean_err=np.nanmean(list_pos,axis=1), acc=list_acc,num_trocar=list_trocar)
+
+
 ###################################################################
 
 if __name__ == '__main__':
@@ -1097,14 +1210,19 @@ if __name__ == '__main__':
 	# ransac_new(trocar,percentage)
 	choice = ['incorrect_data','noise','observed lines']
 
+	draw_graph(choice[1],trocar)
 	# for i in range(10000):
 	# 	print(i)
-	# 	test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[0])
+		# test_case(trocar, percentage, N_lines = 1000, sigma=52, upper_bound=150, choice=choice[0])
 
 
 	# save_dataset(trocar,percentage,choice[1])
 	# load_dataset()
 
-	runMercuri()
+	# runMercuri()
+	# for i in range(1000):
+	# 	print(i)
+	# 	test_case1(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150)
 	
+
 

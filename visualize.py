@@ -49,7 +49,7 @@ def DrawConfidenceRegion(s,center,rotation,trocar):
 	plt.title(trocar + " confidence region")
 	plt.show()
 
-def visualize_model(trocar, pts = None, vect_end = None, vect_start = None, line_idx = None, gt=True):
+def visualize_model(trocar=None, pts = None, vect_end = None, vect_start = None, line_idx = None, gt=True):
 
 	# Draw 3d graph
 
@@ -59,10 +59,10 @@ def visualize_model(trocar, pts = None, vect_end = None, vect_start = None, line
 	ax.set_ylabel('Y (mm)')
 	ax.set_zlabel('Z (mm)')
 
-	r = [-120, 120]
-	for s, e in combinations(np.array(list(product(r, r, r))), 2):
-		if np.sum(np.abs(s-e)) == r[1]-r[0]:
-			ax.plot3D(*zip(s, e), color="#0c0c0d")
+	# r = [-120, 120]
+	# for s, e in combinations(np.array(list(product(r, r, r))), 2):
+	# 	if np.sum(np.abs(s-e)) == r[1]-r[0]:
+	# 		ax.plot3D(*zip(s, e), color="#0c0c0d")
 
 
 	# draw cloud points
@@ -103,12 +103,19 @@ def visualize_model(trocar, pts = None, vect_end = None, vect_start = None, line
 
 
 	#draw trocar point
-	for i in range(trocar.shape[0]):
-		ax.scatter(trocar[i,0],trocar[i,1],trocar[i,2],marker = "*",color="b")
+	if trocar is not None:
+		for i in range(trocar.shape[0]):
+			ax.scatter(trocar[i,0],trocar[i,1],trocar[i,2],marker = "*",color="b")
+
+	#draw original point O(0,0,0)
+	ax.scatter(0,0,0,marker = "o",color='r')
+
 	if gt:
-		plt.title("Original Data")
+		plt.title("Real Data")
 	else:
 		plt.title("Clustered Data")
+
+
 	plt.show()
 
 def get_cmap(n, name='hsv'):
