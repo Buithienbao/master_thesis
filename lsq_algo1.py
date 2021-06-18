@@ -19,7 +19,6 @@ import statsmodels.api as sm
 import pickle
 import os 
 import glob
-<<<<<<< HEAD
 import sys
 import threading
 
@@ -205,17 +204,17 @@ def test_case(trocar, percentage, choice,N_lines = 1000, sigma=5, upper_bound=15
 	if choice == lst[0]:
 		list_noise_percentage = np.arange(start_range, end_range + step,step,dtype=np.uint8)
 		pref = 'inc'
-		pref_err = 'inc_err'
+		pref_err = 'inc_err1'
 	elif choice == lst[1]:
 		list_noise_percentage = np.arange(start_range, end_range + step,step,dtype=np.uint8)
 		pref = 'sigma'
-		pref_err = 'sigma_err'
+		pref_err = 'sigma_err1'
 
 	else:
 		list_noise_percentage = np.arange(start_range+step, end_range + step,step,dtype=np.uint8)
 		list_noise_percentage = [element * 20 for element in list_noise_percentage]
 		pref = 'lines'
-		pref_err = 'lines_err'
+		pref_err = 'lines_err1'
 
 	path = os.path.join(data_path,pref)
 
@@ -228,6 +227,8 @@ def test_case(trocar, percentage, choice,N_lines = 1000, sigma=5, upper_bound=15
 
 	path_err = os.path.join(data_path,pref_err)
 
+	if not os.path.exists(path_err):
+		os.makedirs(path_err)
 	lst_err = glob.glob(path_err + '/' + "*.npz")
 	lst_err.sort()
 
@@ -505,23 +506,23 @@ def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000):
 			if num_inliers > threshold_inliers:
 
 				# # remove_idx.append(min_list_idx_temp)
-				# center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
+				center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
 
-				# new_min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+				new_min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
 
-				# new_num_inliers = len(new_min_list_idx_temp)
+				new_num_inliers = len(new_min_list_idx_temp)
 
-				# while new_num_inliers > num_inliers:
+				while new_num_inliers > num_inliers:
 
-				# 	num_inliers = new_num_inliers
+					num_inliers = new_num_inliers
 
-				# 	min_list_idx_temp = np.copy(new_min_list_idx_temp)
+					min_list_idx_temp = np.copy(new_min_list_idx_temp)
 
-				# 	center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
+					center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
 
-				# 	new_min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
+					new_min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
 
-				# 	new_num_inliers = len(new_min_list_idx_temp)
+					new_num_inliers = len(new_min_list_idx_temp)
 
 				count_cluster+=1
 				# print("Trocar " + str(count_cluster) + " found.")
@@ -1071,7 +1072,7 @@ if __name__ == '__main__':
 	choice = ['incorrect_data','noise','observed lines']
 
 	# for i in range(400):
-	# 	test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[0])
+	# test_case(trocar, percentage, N_lines = 1000, sigma=50, upper_bound=150, choice=choice[2])
 	# 	test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[1])
 	# 	test_case(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150, choice=choice[2])
 	# save_dataset(trocar,percentage,choice[1])

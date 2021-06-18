@@ -196,7 +196,7 @@ def EvaluateLsqSolution(covariance_mtrx, pts_estimated):
 def test_case(trocar, percentage, choice,N_lines = 1000, sigma=5, upper_bound=150):
 
 	lst = ['incorrect_data','noise','observed lines']
-	data_path = '/home/bao/Downloads/Git/master_thesis/data'
+	data_path = '/home/bao/Documents/Git/master_thesis/data'
 	num_trocar = trocar.shape[0]
 
 	if choice == lst[0]:
@@ -499,7 +499,7 @@ def ransac_new(trocar, vect_start, vect_end, dict_gt, N_lines = 1000):
 
 			if num_inliers > threshold_inliers:
 
-				# # remove_idx.append(min_list_idx_temp)
+				# remove_idx.append(min_list_idx_temp)
 				# center_point_temp,_,_,_ = estimate_trocar(vect_end,vect_start,min_list_idx_temp)
 
 				# new_min_list_idx_temp = lineseg_dist(center_point_temp,vect_start,vect_end, list_idx_lines = list_idx_copy, threshold = threshold_dist)
@@ -781,9 +781,9 @@ def save_dataset(trocar, percentage,choice,sigma=5,upper_bound=150,N_lines=1000)
 
 	for num in list_noise_percentage:
 
-		if num != 0:
+		# if num != 0:
 
-			break
+		# 	break
 
 		if choice == lst[0]:
 			percentage[-1] = num/100
@@ -856,7 +856,11 @@ def runMercuri():
 	pts = read_ply("liver_views12345_ct0_wrp0_arap0_alterscheme3.ply")
 	M = np.diag((1,-1,-1))
 	pts = np.matmul(pts,M)
-	visualize_model(pts= pts,vect_end = vect_end, vect_start = vect_start, line_idx = line_idx)
+	cent_pts = np.mean(pts,axis=0).reshape(1,3)
+	print(cent_pts)
+	print(np.linalg.norm(cent_pts - final_sol))
+
+	visualize_model(trocar = final_sol,pts= pts,vect_end = vect_end, vect_start = vect_start, line_idx = line_idx)
 
 	# if lst_res:	
 
@@ -958,7 +962,7 @@ def draw_graph(choice,trocar):
 
 		ite += 1	
 
-	list_abs_err = list_abs_err/length
+	# list_abs_err = list_abs_err/length
 	list_acc = list_acc/length
 	list_trocar = list_trocar/length
 	list_mean = list_mean/length
@@ -968,12 +972,12 @@ def draw_graph(choice,trocar):
 
 	if choice == lst[1]:
 
-		plt.figure(100),
-		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
-		axs.plot(list_noise_percentage, list_acc, 'o-')
-		axs.xaxis.grid(True, which='major')
-		axs.yaxis.grid(True, which='major')
-		axs.set(xlabel='Amount of noise (mm)', ylabel='Clustering accuracy (%)')
+		# plt.figure(100),
+		fig1, axs1 = plt.subplots(1, 1, figsize = (10, 4))
+		axs1.plot(list_noise_percentage, list_acc, 'o-')
+		axs1.xaxis.grid(True, which='major')
+		axs1.yaxis.grid(True, which='major')
+		axs1.set(xlabel='Amount of noise (mm)', ylabel='Clustering accuracy (%)')
 
 		# fig, axs = plt.subplots(1, 1, figsize = (10, 4))
 		# axs.plot(list_noise_percentage, list_acc[:,0], 'r-')
@@ -984,35 +988,35 @@ def draw_graph(choice,trocar):
 		# axs.set(xlabel='Amount of noise (mm)', ylabel='Clustering accuracy (%)')
 
 
-		plt.figure(200),
-		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
-		axs.plot(list_noise_percentage, list_trocar, 'o-')
-		axs.xaxis.grid(True, which='major')
-		axs.yaxis.grid(True, which='major')
-		axs.set(xlabel='Amount of noise (mm)', ylabel='Number of trocar predicted')
+		# plt.figure(200),
+		fig2, axs2 = plt.subplots(1, 1, figsize = (10, 4))
+		axs2.plot(list_noise_percentage, list_trocar, 'o-')
+		axs2.xaxis.grid(True, which='major')
+		axs2.yaxis.grid(True, which='major')
+		axs2.set(xlabel='Amount of noise (mm)', ylabel='Number of cluster predicted')
 
-		plt.figure(300),
-		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
-		axs.plot(list_noise_percentage, list_abs_err[:,0], 'o-')
-		axs.plot(list_noise_percentage, list_abs_err[:,1], 'o-')
-		axs.plot(list_noise_percentage, list_abs_err[:,2], 'o-')
-		axs.plot(list_noise_percentage, list_abs_err[:,3], 'o-')
-		# axs.plot(list_noise_percentage, list_mean, 'o-')
-		axs.plot(list_noise_percentage, np.nanmean(list_abs_err,axis=1), 'o-')
+		# plt.figure(300),
+		fig3, axs3 = plt.subplots(1, 1, figsize = (10, 4))
+		axs3.plot(list_noise_percentage, list_abs_err[:,0], 'o-')
+		axs3.plot(list_noise_percentage, list_abs_err[:,1], 'o-')
+		axs3.plot(list_noise_percentage, list_abs_err[:,2], 'o-')
+		axs3.plot(list_noise_percentage, list_abs_err[:,3], 'o-')
+		axs3.plot(list_noise_percentage, list_mean, 'mo-')
+		# axs.plot(list_noise_percentage, np.nanmean(list_abs_err,axis=1), 'o-')
 
-		axs.xaxis.grid(True, which='major')
-		axs.yaxis.grid(True, which='major')
-		axs.legend(['Trocar 1','Trocar 2','Trocar 3','Trocar 4','Average'])
-		axs.set(xlabel='Amount of noise (mm)', ylabel='Trocar position error (mm)')
+		axs3.xaxis.grid(True, which='major')
+		axs3.yaxis.grid(True, which='major')
+		axs3.legend(['Trocar 1','Trocar 2','Trocar 3','Trocar 4','Average'])
+		axs3.set(xlabel='Amount of noise (mm)', ylabel='Trocar position error (mm)')
 
 	elif choice == lst[0]:
 
-		plt.figure(100),
-		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
-		axs.plot(list_noise_percentage, list_acc, 'o-')
-		axs.xaxis.grid(True, which='major')
-		axs.yaxis.grid(True, which='major')
-		axs.set(xlabel='Incorrect data (%)', ylabel='Clustering accuracy (%)')
+		# plt.figure(100),
+		fig1, axs1 = plt.subplots(1, 1, figsize = (10, 4))
+		axs1.plot(list_noise_percentage, list_acc, 'o-')
+		axs1.xaxis.grid(True, which='major')
+		axs1.yaxis.grid(True, which='major')
+		axs1.set(xlabel='Incorrect data (%)', ylabel='Clustering accuracy (%)')
 
 		# fig, axs = plt.subplots(1, 1, figsize = (10, 4))
 		# axs.plot(list_noise_percentage, list_acc[:,0], 'r-')
@@ -1022,33 +1026,33 @@ def draw_graph(choice,trocar):
 		# axs.legend(['Trocar 1','Trocar 2','Trocar 3','Trocar 4'])
 		# axs.set(xlabel='Incorrect data (%)', ylabel='Clustering accuracy (%)')
 
-		plt.figure(200),
-		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
-		axs.plot(list_noise_percentage, list_trocar, 'o-')
-		axs.xaxis.grid(True, which='major')
-		axs.yaxis.grid(True, which='major')
-		axs.set(xlabel='Incorrect data (%)', ylabel='Number of trocar predicted')
+		# plt.figure(200),
+		fig2, axs2 = plt.subplots(1, 1, figsize = (10, 4))
+		axs2.plot(list_noise_percentage, list_trocar, 'o-')
+		axs2.xaxis.grid(True, which='major')
+		axs2.yaxis.grid(True, which='major')
+		axs2.set(xlabel='Incorrect data (%)', ylabel='Number of cluster predicted')
 
-		plt.figure(300),
-		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
-		axs.plot(list_noise_percentage, list_abs_err[:,0], 'o-')
-		axs.plot(list_noise_percentage, list_abs_err[:,1], 'o-')
-		axs.plot(list_noise_percentage, list_abs_err[:,2], 'o-')
-		axs.plot(list_noise_percentage, list_abs_err[:,3], 'o-')
-		# axs.plot(list_noise_percentage, list_mean, 'o-')
-		axs.plot(list_noise_percentage, np.nanmean(list_abs_err,axis=1), 'o-')
-		axs.legend(['Trocar 1','Trocar 2','Trocar 3','Trocar 4','Average'])
-		axs.xaxis.grid(True, which='major')
-		axs.yaxis.grid(True, which='major')
-		axs.set(xlabel='Incorrect data (%)', ylabel='Trocar position error (mm)')
+		# plt.figure(300),
+		fig3, axs3 = plt.subplots(1, 1, figsize = (10, 4))
+		axs3.plot(list_noise_percentage, list_abs_err[:,0], 'o-')
+		axs3.plot(list_noise_percentage, list_abs_err[:,1], 'o-')
+		axs3.plot(list_noise_percentage, list_abs_err[:,2], 'o-')
+		axs3.plot(list_noise_percentage, list_abs_err[:,3], 'o-')
+		axs3.plot(list_noise_percentage, list_mean, 'o-')
+		# axs.plot(list_noise_percentage, np.nanmean(list_abs_err,axis=1), 'o-')
+		axs3.legend(['Trocar 1','Trocar 2','Trocar 3','Trocar 4','Average'])
+		axs3.xaxis.grid(True, which='major')
+		axs3.yaxis.grid(True, which='major')
+		axs3.set(xlabel='Incorrect data (%)', ylabel='Trocar position error (mm)')
 
 	else:
-		plt.figure(100),
-		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
-		axs.plot(list_noise_percentage, list_acc, 'o-')
-		axs.xaxis.grid(True, which='major')
-		axs.yaxis.grid(True, which='major')
-		axs.set(xlabel='Number of observed tool 3D axes', ylabel='Clustering accuracy (%)')
+		# plt.figure(100),
+		fig1, axs1 = plt.subplots(1, 1, figsize = (10, 4))
+		axs1.plot(list_noise_percentage, list_acc, 'o-')
+		axs1.xaxis.grid(True, which='major')
+		axs1.yaxis.grid(True, which='major')
+		axs1.set(xlabel='Number of observed tool 3D axes', ylabel='Clustering accuracy (%)')
 
 		# fig, axs = plt.subplots(1, 1, figsize = (10, 4))
 		# axs.plot(list_noise_percentage, list_acc[:,0], 'r-')
@@ -1058,27 +1062,27 @@ def draw_graph(choice,trocar):
 		# axs.legend(['Trocar 1','Trocar 2','Trocar 3','Trocar 4'])
 		# axs.set(xlabel='Incorrect data (%)', ylabel='Clustering accuracy (%)')
 
-		plt.figure(200),
-		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
-		axs.plot(list_noise_percentage, list_trocar, 'o-')
-		axs.xaxis.grid(True, which='major')
-		axs.yaxis.grid(True, which='major')
-		axs.set(xlabel='Number of observed tool 3D axes', ylabel='Number of trocar predicted')
+		# plt.figure(200),
+		fig2, axs2 = plt.subplots(1, 1, figsize = (10, 4))
+		axs2.plot(list_noise_percentage, list_trocar, 'o-')
+		axs2.xaxis.grid(True, which='major')
+		axs2.yaxis.grid(True, which='major')
+		axs2.set(xlabel='Number of observed tool 3D axes', ylabel='Number of cluster predicted')
 
-		plt.figure(300),
-		fig, axs = plt.subplots(1, 1, figsize = (10, 4))
-		axs.plot(list_noise_percentage, list_abs_err[:,0], 'o-')
-		axs.plot(list_noise_percentage, list_abs_err[:,1], 'o-')
-		axs.plot(list_noise_percentage, list_abs_err[:,2], 'o-')
-		axs.plot(list_noise_percentage, list_abs_err[:,3], 'o-')
-		# axs.plot(list_noise_percentage, list_mean, 'o-')
-		axs.plot(list_noise_percentage, np.nanmean(list_abs_err,axis=1), 'o-')
+		# plt.figure(300),
+		fig3, axs3 = plt.subplots(1, 1, figsize = (10, 4))
+		axs3.plot(list_noise_percentage, list_abs_err[:,0], 'o-')
+		axs3.plot(list_noise_percentage, list_abs_err[:,1], 'o-')
+		axs3.plot(list_noise_percentage, list_abs_err[:,2], 'o-')
+		axs3.plot(list_noise_percentage, list_abs_err[:,3], 'o-')
+		axs3.plot(list_noise_percentage, list_mean, 'mo-')
+		# axs.plot(list_noise_percentage, np.nanmean(list_abs_err,axis=1), 'o-')
 
-		axs.legend(['Trocar 1','Trocar 2','Trocar 3','Trocar 4','Average'])
+		axs3.legend(['Trocar 1','Trocar 2','Trocar 3','Trocar 4','Average'])
 		# axs.grid(True,linestyle='--')
-		axs.xaxis.grid(True, which='major')
-		axs.yaxis.grid(True, which='major')
-		axs.set(xlabel='Number of observed tool 3D axes', ylabel='Trocar position error (mm)')
+		axs3.xaxis.grid(True, which='major')
+		axs3.yaxis.grid(True, which='major')
+		axs3.set(xlabel='Number of observed tool 3D axes', ylabel='Trocar position error (mm)')
 		
 	plt.show()	
 
@@ -1091,7 +1095,7 @@ def test_case1(trocar, percentage,N_lines = 1000, sigma=5, upper_bound=150):
 
 	# if choice == lst[0]:
 	# list_noise_percentage = np.arange(start_range, end_range + step,step,dtype=np.uint8)
-	pref = 'data/sigma'
+	pref = 'data/inc'
 	pref_err = 'navid'
 	# elif choice == lst[1]:
 	# 	list_noise_percentage = np.arange(start_range, end_range + step,step,dtype=np.uint8)
@@ -1106,9 +1110,9 @@ def test_case1(trocar, percentage,N_lines = 1000, sigma=5, upper_bound=150):
 
 	path = os.path.join(data_path,pref)
 
-	lst_data = path + '/' + "sigma_00050.npz"
+	lst_data = path + '/' + "inc_00020.npz"
 
-	lst_gt = path + '/' + "sigma_00050.pkl"
+	lst_gt = path + '/' + "inc_00020.pkl"
 
 	path_err = os.path.join(data_path,pref_err)
 
@@ -1150,31 +1154,34 @@ def test_case1(trocar, percentage,N_lines = 1000, sigma=5, upper_bound=150):
 	list_pos = np.copy(list_abs_err)
 	list_pos[list_pos < 0 ] = np.nan
 	
-	if lst_err:
+	# if lst_err:
 		
-		data = np.load(lst_err[0])
-		trocar1 = data['trocar1']
-		trocar2 = data['trocar2']
-		trocar3 = data['trocar3']
-		trocar4 = data['trocar4']
-		mean_err = data['mean_err']
-		acc = data['acc']
-		nt = data['num_trocar']
-		trocar1	= np.append(trocar1,list_abs_err[0,0])
-		trocar2	= np.append(trocar2,list_abs_err[0,1])
-		trocar3	= np.append(trocar3,list_abs_err[0,2])
-		trocar4	= np.append(trocar4,list_abs_err[0,3])
-		mean_err = np.append(mean_err,np.nanmean(list_pos,axis=1))
-		acc	= np.append(acc,list_acc)
-		nt	= np.append(nt,list_trocar)
+	# 	data = np.load(lst_err[0])
+	# 	trocar1 = data['trocar1']
+	# 	trocar2 = data['trocar2']
+	# 	trocar3 = data['trocar3']
+	# 	trocar4 = data['trocar4']
+	# 	mean_err = data['mean_err']
+	# 	acc = data['acc']
+	# 	nt = data['num_trocar']
+	# 	trocar1	= np.append(trocar1,list_abs_err[0,0])
+	# 	trocar2	= np.append(trocar2,list_abs_err[0,1])
+	# 	trocar3	= np.append(trocar3,list_abs_err[0,2])
+	# 	trocar4	= np.append(trocar4,list_abs_err[0,3])
+	# 	mean_err = np.append(mean_err,np.nanmean(list_pos,axis=1))
+	# 	acc	= np.append(acc,list_acc)
+	# 	nt	= np.append(nt,list_trocar)
 
-		np.savez(path_err+'.npz', trocar1=trocar1, trocar2=trocar2, trocar3=trocar3, trocar4=trocar4, mean_err=mean_err, acc=acc,num_trocar=nt)
+	# 	np.savez(path_err+'.npz', trocar1=trocar1, trocar2=trocar2, trocar3=trocar3, trocar4=trocar4, mean_err=mean_err, acc=acc,num_trocar=nt)
 
-	else:
+	# else:
 
-		np.savez(path_err+'.npz', trocar1=list_abs_err[0,0], trocar2=list_abs_err[0,1], trocar3=list_abs_err[0,2], trocar4=list_abs_err[0,3], mean_err=np.nanmean(list_pos,axis=1), acc=list_acc,num_trocar=list_trocar)
+	# 	np.savez(path_err+'.npz', trocar1=list_abs_err[0,0], trocar2=list_abs_err[0,1], trocar3=list_abs_err[0,2], trocar4=list_abs_err[0,3], mean_err=np.nanmean(list_pos,axis=1), acc=list_acc,num_trocar=list_trocar)
 
+def multi_test(trocar, percentage, N_lines, sigma, upper_bound, choice):
 
+	for i in range(400):
+		test_case(trocar=trocar, percentage=percentage, N_lines = N_lines, sigma=sigma, upper_bound=upper_bound, choice=choice)
 ###################################################################
 
 if __name__ == '__main__':
@@ -1188,7 +1195,7 @@ if __name__ == '__main__':
 	# run_algo4(trocar,percentage)
 	# run_algo5(trocar,percentage)
 	percentage = np.array([0.4,0.3,0.2,0.1,0.1])
-	# test_case(trocar, percentage, N_lines = 1000, sigma=15, upper_bound=150,use_inc=False)
+	# test_case1(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150)
 	# vect_start, vect_end, dict_gt = generate_data(N_lines, percentage, trocar, scale1 = SCALE_COEF1, scale2 = SCALE_COEF2, sigma = 5, upper_bound = 150)
 	
 	# list_idx = np.random.choice(N_lines, size=N_lines, replace=False)
@@ -1210,7 +1217,7 @@ if __name__ == '__main__':
 	# ransac_new(trocar,percentage)
 	choice = ['incorrect_data','noise','observed lines']
 
-	draw_graph(choice[1],trocar)
+	# draw_graph(choice[2],trocar)
 	# for i in range(10000):
 	# 	print(i)
 		# test_case(trocar, percentage, N_lines = 1000, sigma=52, upper_bound=150, choice=choice[0])
@@ -1225,4 +1232,12 @@ if __name__ == '__main__':
 	# 	test_case1(trocar, percentage, N_lines = 1000, sigma=5, upper_bound=150)
 	
 
+	# pts = read_ply("liver_views12345_ct0_wrp0_arap0_alterscheme3.ply")
+	# M = np.diag((1,-1,-1))
+	# pts = np.matmul(pts,M)
 
+	# visualize_model(pts=pts,gt=True)
+
+	threading.Thread(target=multi_test,args=(trocar, percentage, 1000, 5, 150, choice[0])).start()
+	threading.Thread(target=multi_test,args=(trocar, percentage, 1000, 5, 150, choice[1])).start()
+	threading.Thread(target=multi_test,args=(trocar, percentage, 1000, 5, 150, choice[2])).start()
