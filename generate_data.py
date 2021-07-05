@@ -372,7 +372,7 @@ def generate_coef(unit_vect, point):
 
     return a,b
 
-def dataFromMercuri(filepath, scale1 = 1, scale2 = 1):
+def loadMatFile(filepath, scale1 = 1, scale2 = 1):
 
     """
     Load data from mat file
