@@ -4,9 +4,8 @@ useCroppedImages = true;
 
 %% Set the directory path of the files to estimate the pose.
 % @TBM
-DATA_PATH_IMAGE = [ '/home/bao/Downloads/trocar_estimation_adrien/mercuri' ];
+DATA_PATH_IMAGE = [ '/home/bao/Downloads/trocar_estimation_adrien/liver_tools_trocars_compressed/' ];
 
-doNonLinRefinement = 0;
 
 % % Image indices in folder subImageA/C
 % if strcmp(tool,'toolA')
@@ -16,8 +15,8 @@ doNonLinRefinement = 0;
 % if strcmp(tool,'toolC')
 %     indicesToProcess = [ 1 3 4 6 16 19 24 26 28 33 36 40 41 42 48 ];
 % end
-indicesToProcess = [ 43 44 49 52 61 ];
-% indicesToProcess = [ 66 88 90 101 121 ];
+% indicesToProcess = [ 43 44 49 52 61 ];
+indicesToProcess = 4431:4615;
 
 errorRadius = [ 1 ]; % modify this line if you want to simulate noise on the the radius measure, e.g. [1.0,1.05,1.1]
 
@@ -80,7 +79,7 @@ params.nSample = 20; % nb sample points along the cylindrical parts
                      % used in the pose refinement
 
 % For result storage                   
-imagePrefix = '%02d';
+imagePrefix = '%04d';
 % imagePrefix = '%03d';
 
 % % Load the sub images coordinates
@@ -100,7 +99,8 @@ refinePoseToSave = {};
 id1 = 1;
 
 for iFrameToProcess = indicesToProcess
-    disp("____________________")
+    disp("____________________");
+    fprintf("%04d th\n",iFrameToProcess);
 %     Iref = uint8(zeros(1080,1920,1));
 %     subImage = subImages(iFrameToProcess);
 
@@ -134,16 +134,20 @@ for iFrameToProcess = indicesToProcess
 %         I_Line2 = Iref;
 %         I_Line2(subImage.position(2):(subImage.position(2)+subImage.position(4)),subImage.position(1):(subImage.position(1)+subImage.position(3)),:) = I_Line2_sub;
 %     end
-
-    I = imread([DATA_PATH_IMAGE '/undistorted/' 'image' sprintf([ imagePrefix '.png' ],iFrameToProcess)]);
-    I_bothline = imread([DATA_PATH_IMAGE '/results/' 'image' sprintf([ imagePrefix '_edgeLine.png'], iFrameToProcess) ]);
-    I_midline = imread([DATA_PATH_IMAGE '/results/' 'image' sprintf([ imagePrefix '_midline.png'], iFrameToProcess) ]);
-    I_tippoint = imread([DATA_PATH_IMAGE '/results/' 'image' sprintf([ imagePrefix '_tipPoint_Approximated.png'], iFrameToProcess) ]);
-    I_Line1 = imread([DATA_PATH_IMAGE '/results/' 'image' sprintf([ imagePrefix '_edgeLine_Line_1.png'], iFrameToProcess) ]);
-    I_Line2 = imread([DATA_PATH_IMAGE '/results/' 'image' sprintf([ imagePrefix '_edgeLine_Line_2.png'], iFrameToProcess) ]);
+    if ~isfile([DATA_PATH_IMAGE '/undistorted/T4/' 'image' sprintf([ imagePrefix '.png' ],iFrameToProcess)])
+        continue
+    end
+    
+    I = imread([DATA_PATH_IMAGE '/undistorted/T4/' 'image' sprintf([ imagePrefix '.png' ],iFrameToProcess)]);
+%     I = imread([DATA_PATH_IMAGE '/results/T1/' 'image' sprintf([ imagePrefix '.png' ],iFrameToProcess)]);
+    I_bothline = imread([DATA_PATH_IMAGE '/results/T4/' 'image' sprintf([ imagePrefix '_edgeLine.png'], iFrameToProcess) ]);
+    I_midline = imread([DATA_PATH_IMAGE '/results/T4/' 'image' sprintf([ imagePrefix '_midLine.png'], iFrameToProcess) ]);
+    I_tippoint = imread([DATA_PATH_IMAGE '/results/T4/' 'image' sprintf([ imagePrefix '_tipPoint_Approximated.png'], iFrameToProcess) ]);
+    I_Line1 = imread([DATA_PATH_IMAGE '/results/T4/' 'image' sprintf([ imagePrefix '_edgeLine_Line_1.png'], iFrameToProcess) ]);
+    I_Line2 = imread([DATA_PATH_IMAGE '/results/T4/' 'image' sprintf([ imagePrefix '_edgeLine_Line_2.png'], iFrameToProcess) ]);
     % Calibration matrix
-    K = [ 952.06,       0,  884.47
-        0, 952.06,  553.68
+    K = [ 1204.68,       0,  1025.01
+        0, 1204.51,  620.08
         0,       0,    1.00];
 
     pose = [ eye(3) zeros(3,1) ];
@@ -154,9 +158,10 @@ for iFrameToProcess = indicesToProcess
     % results you would like to see.
     flags.displayLineDetection = 0;
     flags.displayPose = 0;
-    flags.displayPoseInit = 1;
+    flags.displayPoseInit = 0;
     flags.displayImages = 0;
     flags.doSave = 1;
+    doNonLinRefinement = 1;
 
     tic
 
@@ -292,6 +297,13 @@ for iFrameToProcess = indicesToProcess
     % B. Compute R
     % Rank-1 matrix from r3
     rankOneRot = r3*r3';
+    if any(any(isnan(rankOneRot)))
+        continue
+    end
+    
+    if any(any(isinf(rankOneRot)))
+        continue
+    end
     % Pick a rotation matrix that "contains" r3
     [U,S,V] = svd(rankOneRot);
     % Place r3 as the last column
@@ -335,7 +347,7 @@ for iFrameToProcess = indicesToProcess
         imshow(I,'InitialMagnification','fit');
         hold on;
         projectPose(proj, [ R toolOrig ], model.radius);
-        pause
+%         pause
     end
 
     %%
@@ -350,7 +362,7 @@ for iFrameToProcess = indicesToProcess
         imshow(I,'InitialMagnification','fit');
         hold on;
         plot(TipPoint(1),TipPoint(2),'go');
-        pause
+%         pause
     end
 
     %% Compute lambda such that the tool position 
@@ -405,18 +417,21 @@ for iFrameToProcess = indicesToProcess
 
     disp(pose);
 
-    M = load([DATA_PATH_IMAGE sprintf('/exported_models/ABSOR_pose_view%d.txt',frIds2(id1))]);
+    M = load([DATA_PATH_IMAGE sprintf('/exported_models/TransformationMatrix.txt')]);
 
     M = [1 0 0 0; 0 -1 0 0; 0 0 -1 0; 0 0 0 1] * M;
 
-    pose1 = pose * M;
+%     pose1 = pose * M;
 
-    disp(pose1);
+%     disp(pose1);
 
-    refinePoseToSave{id1} = pose1;
+%     refinePoseToSave{id1} = pose1;
 
-    id1 = id1 + 1;
-
+%     id1 = id1 + 1;
+    if iFrameToProcess == 587
+        continue;
+    end
+    
     %% Perform the pose refinement according to the item 6 of table 1 of the MIA paper
     if doNonLinRefinement
 
@@ -455,11 +470,15 @@ for iFrameToProcess = indicesToProcess
             pause
         end
 
-        poseResNew = poseRes;
-        disp('poseResNew')
-        disp(poseResNew)
+%         poseResNew = poseRes;
+        disp('poseRes')
+        disp(poseRes)
 
-        refinePoseToSave{iFrameToProcess} = poseRes;
+%         refinePoseToSave{iFrameToProcess} = poseRes;
+        pose1 = poseRes * M;
+        refinePoseToSave{id1} = pose1;
+%         disp(id1);
+        id1 = id1 + 1;
     end
 
 
@@ -471,7 +490,7 @@ end
 
 % @TBM
 if flags.doSave
-    save([DATA_PATH_IMAGE '/results/Radius.mat'],'refinePoseToSave');
+    save([DATA_PATH_IMAGE '/results/Radius4.mat'],'refinePoseToSave');
 end
 %     end
 % end
